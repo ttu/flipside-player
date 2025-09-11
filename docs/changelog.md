@@ -6,6 +6,54 @@ This document tracks all significant changes, improvements, and fixes made to Fl
 
 ---
 
+## 2025-01-11 - UI/UX Improvements & Premium Account Handling ✨
+
+### Major Features Added
+
+- **ADDED**: Premium account detection and warning system
+- **ADDED**: Dismissible premium warning notification with close button
+- **ADDED**: Enhanced Spotify API error handling with user-friendly messages
+- **ADDED**: Improved album image sizing in track listings
+- **ADDED**: Fixed search results layout (album cover left, info right)
+
+### UI/UX Improvements
+
+- **FIXED**: Record listing size changes when switching vinyl sides
+- **FIXED**: Song listing position stability during side switches
+- **REMOVED**: Obsolete A/B text labels and center line from vinyl display
+- **IMPROVED**: Album cover image sizing - now 300px max-width for better prominence
+- **ENHANCED**: Search results layout with proper horizontal alignment
+- **FIXED**: CSS z-index conflicts between premium warning and track listings
+
+### Technical Enhancements
+
+- **ADDED**: `product` field to `SpotifyUser` interface for premium detection
+- **IMPROVED**: Error handling in Spotify API calls with specific error codes
+- **ENHANCED**: CSS layout with consistent min-heights and flex properties
+- **FIXED**: CSS selector conflicts between search results and track listings
+- **ADDED**: Proper z-index hierarchy for UI elements
+
+### Files Modified
+
+- `backend/src/types/index.ts` - Added premium detection field
+- `backend/src/routes/spotify.ts` - Enhanced error handling
+- `backend/src/utils/spotify.ts` - Improved API error messages
+- `frontend/src/components/PremiumWarning.tsx` - New premium warning component
+- `frontend/src/types/index.ts` - Updated user interface
+- `frontend/src/App.css` - Major styling improvements and fixes
+- `frontend/src/components/VinylDeck.tsx` - Removed obsolete visual elements
+- `frontend/src/App.tsx` - Integrated premium warning component
+
+### Bug Fixes
+
+- Fixed horizontal scrolling in album search results
+- Resolved layout jumping when switching between vinyl sides
+- Fixed close button positioning in premium warning
+- Eliminated CSS conflicts between different UI components
+- Improved text overflow handling in search results
+
+---
+
 ## 2025-01-15 - Session Authentication Migration 🔐
 
 ### Major Changes

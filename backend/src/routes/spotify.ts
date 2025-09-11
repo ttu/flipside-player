@@ -15,6 +15,11 @@ const transferSchema = z.object({
   play: z.boolean().default(true),
 });
 
+const playSchema = z.object({
+  deviceId: z.string().optional(),
+  uris: z.array(z.string()).optional(),
+});
+
 export async function spotifyRoutes(fastify: FastifyInstance) {
   const spotify = new SpotifyAPI(
     process.env.SPOTIFY_CLIENT_ID!,
@@ -116,6 +121,74 @@ export async function spotifyRoutes(fastify: FastifyInstance) {
       }
 
       return reply.code(500).send({ error: 'Failed to transfer playback' });
+    }
+  });
+
+  // Get album by ID
+  fastify.get('/spotify/albums/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const accessToken = await getValidAccessToken(request);
+
+      // Check cache first
+      const redis = getRedisClient();
+      const cacheKey = `album:${id}`;
+      const cached = await redis.get(cacheKey);
+
+      if (cached) {
+        return reply.send(JSON.parse(cached));
+      }
+
+      const album = await spotify.getAlbum(accessToken, id);
+
+      // Cache for 5 minutes
+      await redis.setEx(cacheKey, 300, JSON.stringify(album));
+
+      return reply.send(album);
+    } catch (error: any) {
+      fastify.log.error(error);
+
+      if (error.message === 'Not authenticated') {
+        return reply.code(401).send({ error: 'Not authenticated' });
+      }
+
+      return reply.code(500).send({ error: 'Failed to get album' });
+    }
+  });
+
+  // Start playback
+  fastify.put('/spotify/play', async (request, reply) => {
+    try {
+      const { deviceId, uris } = playSchema.parse(request.body);
+      const accessToken = await getValidAccessToken(request);
+
+      await spotify.startPlayback(accessToken, deviceId, uris);
+
+      return reply.send({ success: true });
+    } catch (error: any) {
+      fastify.log.error(error);
+
+      if (error.message === 'Not authenticated') {
+        return reply.code(401).send({ error: 'Not authenticated' });
+      }
+
+      // Check for specific Spotify API errors
+      if (error.message.includes('404')) {
+        return reply.code(404).send({
+          error: 'No active device found. Please open Spotify on a device first.',
+        });
+      }
+
+      if (error.message.includes('403')) {
+        return reply.code(403).send({
+          error: 'Premium account required for playback control.',
+        });
+      }
+
+      return reply.code(500).send({
+        error: 'Failed to start playback',
+        details: error.message.includes('HTTP') ? error.message : undefined,
+      });
     }
   });
 }

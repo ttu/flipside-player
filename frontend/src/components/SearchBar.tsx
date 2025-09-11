@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { searchTracks } from '../utils/spotify';
-import { useQueueStore } from '../stores/queueStore';
-import { SpotifyTrack } from '../types';
+import { searchAlbums, getFullAlbum, splitAlbumIntoSides } from '../utils/spotify';
+import { useUIStore } from '../stores/uiStore';
+import { usePlayerStore } from '../stores/playerStore';
+import { SpotifyAlbum } from '../types';
 
 interface SearchBarProps {
   className?: string;
@@ -9,14 +10,15 @@ interface SearchBarProps {
 
 export function SearchBar({ className = '' }: SearchBarProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SpotifyTrack[]>([]);
+  const [results, setResults] = useState<SpotifyAlbum[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const searchRef = useRef<HTMLDivElement>(null);
-  const { addTrack } = useQueueStore();
+  const { setCurrentAlbum, setAlbumTracks, setAlbumLoading } = useUIStore();
+  const { player } = usePlayerStore();
 
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -29,8 +31,8 @@ export function SearchBar({ className = '' }: SearchBarProps) {
     setError(null);
 
     try {
-      const data = await searchTracks(searchQuery);
-      setResults(data.tracks.items);
+      const data = await searchAlbums(searchQuery);
+      setResults(data.albums.items);
       setShowResults(true);
     } catch (err) {
       setError('Search failed. Please try again.');
@@ -59,10 +61,53 @@ export function SearchBar({ className = '' }: SearchBarProps) {
     debouncedSearch(value);
   };
 
-  const handleTrackSelect = (track: SpotifyTrack) => {
-    addTrack(track);
-    setShowResults(false);
-    setQuery('');
+  const handleAlbumSelect = async (album: SpotifyAlbum) => {
+    try {
+      setAlbumLoading(true);
+
+      // Get full album with tracks
+      const fullAlbum = await getFullAlbum(album.id);
+
+      // Split tracks into sides A and B
+      const { sideA, sideB } = splitAlbumIntoSides(fullAlbum.tracks.items, fullAlbum);
+
+      // Update stores
+      setCurrentAlbum(fullAlbum);
+      setAlbumTracks(sideA, sideB);
+
+      // Start playback of the first track from side A
+      if (sideA.length > 0 && player && sideA[0]?.uri) {
+        try {
+          // Use the Web API to start playback
+          const response = await fetch('/api/spotify/play', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              uris: sideA.map(track => track.uri),
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Playback failed:', errorData);
+            setError(errorData.error || 'Failed to start playback');
+            return;
+          }
+        } catch (playError) {
+          console.error('Failed to start playback:', playError);
+          setError('Failed to start playback. Please try again.');
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load album:', err);
+      setError('Failed to load album. Please try again.');
+    } finally {
+      setAlbumLoading(false);
+      setShowResults(false);
+      setQuery('');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -100,7 +145,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
       <div className="search-input-container">
         <input
           type="text"
-          placeholder="Search for tracks..."
+          placeholder="Search for albums..."
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -116,29 +161,26 @@ export function SearchBar({ className = '' }: SearchBarProps) {
             <div className="search-error">{error}</div>
           ) : results.length > 0 ? (
             <ul className="results-list">
-              {results.map(track => (
-                <li key={track.id} className="result-item" onClick={() => handleTrackSelect(track)}>
-                  <div className="track-info">
-                    {track.album.images[0] && (
-                      <img
-                        src={track.album.images[0].url}
-                        alt={track.album.name}
-                        className="track-thumbnail"
-                      />
+              {results.map(album => (
+                <li key={album.id} className="result-item" onClick={() => handleAlbumSelect(album)}>
+                  <div className="album-info">
+                    {album.images[0] && (
+                      <img src={album.images[0].url} alt={album.name} className="album-thumbnail" />
                     )}
-                    <div className="track-details">
-                      <div className="track-name">{track.name}</div>
-                      <div className="track-artist">
-                        {track.artists.map(a => a.name).join(', ')}
+                    <div className="album-details">
+                      <div className="album-name">{album.name}</div>
+                      <div className="album-artist">
+                        {album.artists.map(a => a.name).join(', ')}
                       </div>
-                      <div className="track-album">{track.album.name}</div>
+                      <div className="album-year">{new Date(album.release_date).getFullYear()}</div>
+                      <div className="album-tracks">{album.total_tracks} tracks</div>
                     </div>
                   </div>
                 </li>
               ))}
             </ul>
           ) : query.trim() && !isLoading ? (
-            <div className="no-results">No tracks found for "{query}"</div>
+            <div className="no-results">No albums found for "{query}"</div>
           ) : null}
         </div>
       )}

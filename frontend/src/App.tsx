@@ -8,10 +8,11 @@ import { VinylDeck } from './components/VinylDeck';
 import { CoverView } from './components/CoverView';
 import { SearchBar } from './components/SearchBar';
 import { PlayerControls } from './components/PlayerControls';
-import { QueueStrip } from './components/QueueStrip';
 import { DevicePicker } from './components/DevicePicker';
 import { ViewToggle } from './components/ViewToggle';
 import { FlipButton } from './components/FlipButton';
+import { AlbumTrackList } from './components/AlbumTrackList';
+import { PremiumWarning } from './components/PremiumWarning';
 import './App.css';
 
 declare global {
@@ -89,6 +90,8 @@ function App() {
         </div>
       </header>
 
+      <PremiumWarning />
+
       <main className="app-main">
         <div className="player-section">
           <div className={`view-container ${view.mode}`}>
@@ -105,6 +108,12 @@ function App() {
             </div>
           )}
         </div>
+
+        {view.mode === 'vinyl' && (
+          <div className="album-info-section">
+            <AlbumTrackList />
+          </div>
+        )}
       </main>
 
       <footer className="app-footer">
@@ -113,10 +122,6 @@ function App() {
           <DevicePicker />
         </div>
       </footer>
-
-      <div className="queue-section">
-        <QueueStrip />
-      </div>
     </div>
   );
 }

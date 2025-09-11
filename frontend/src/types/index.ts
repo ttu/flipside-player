@@ -2,6 +2,7 @@ export interface SpotifyUser {
   id: string;
   display_name: string;
   images: { url: string; width: number; height: number }[];
+  product: string; // "premium" or "free"
 }
 
 export interface SpotifyTrack {
@@ -15,6 +16,21 @@ export interface SpotifyTrack {
   };
   uri: string;
   duration_ms: number;
+  track_number?: number;
+}
+
+export interface SpotifyAlbum {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  images: { url: string; width: number; height: number }[];
+  tracks: {
+    items: SpotifyTrack[];
+    total: number;
+  };
+  uri: string;
+  release_date: string;
+  total_tracks: number;
 }
 
 export interface SpotifyDevice {
@@ -49,20 +65,6 @@ export interface ArtworkState {
   error?: string;
 }
 
-export interface QueueItem {
-  type: 'track';
-  spotifyUri: string;
-  title: string;
-  artist: string;
-  albumId: string;
-  albumArt?: string;
-  id: string;
-}
-
-export interface QueueState {
-  items: QueueItem[];
-}
-
 export interface DevicesState {
   devices: SpotifyDevice[];
   loading: boolean;
@@ -79,10 +81,23 @@ export interface SpotifySearchResult {
     items: SpotifyTrack[];
     total: number;
   };
+  albums: {
+    items: SpotifyAlbum[];
+    total: number;
+  };
 }
 
 export type VinylSide = 'A' | 'B';
 
 export interface VinylState {
   activeSide: VinylSide;
+  isFlipping: boolean;
+  flipProgress: number; // 0 to 1, for animation
+}
+
+export interface AlbumState {
+  currentAlbum: SpotifyAlbum | null;
+  sideATracks: SpotifyTrack[];
+  sideBTracks: SpotifyTrack[];
+  loading: boolean;
 }

@@ -19,6 +19,7 @@ FlipSide Player is a Spotify music player built with React (frontend) and Fastif
 ```bash
 cd backend/
 npm run dev        # Start development server with hot reload
+npm run dev:build  # Build frontend then start backend dev server
 npm run build      # Build TypeScript to JavaScript
 npm run type-check # Run TypeScript type checking
 npm run lint       # Run ESLint
@@ -32,6 +33,7 @@ npm run dev        # Start Vite dev server (not used in reverse proxy setup)
 npx vite build     # Build for production (required for reverse proxy)
 npm run lint       # Run ESLint
 npm run type-check # Run TypeScript type checking
+npm run format     # Run Prettier formatting
 ```
 
 ### Full Application
@@ -103,6 +105,14 @@ VITE_APP_NAME="FlipSide Player"
 - Node.js and npm installed
 
 ## Development Workflow
+
+### Option 1: Automatic (Recommended)
+
+1. Ensure Redis is running: `docker start redis-flipside`
+2. Start with auto-build: `cd backend && npm run dev:build`
+3. Access app at http://localhost:3001
+
+### Option 2: Manual
 
 1. Ensure Redis is running: `docker start redis-flipside`
 2. Build frontend: `cd frontend && npx vite build`
@@ -182,3 +192,19 @@ important files at root folder
 - `README.md`: **Comprehensive setup guide**, tool descriptions, usage examples, and API key instructions
 
 When making changes, update relevant documentation files to keep them current with the codebase.
+
+## Code Quality Workflow
+
+**IMPORTANT**: Always run these commands after making code changes:
+
+```bash
+# After making changes to code:
+npm run format     # Format code with Prettier
+npm run lint:fix   # Fix linting errors automatically
+npm run build      # Verify TypeScript compilation and build
+
+# Full project build verification:
+npm run build      # Build both frontend and backend
+```
+
+This ensures code consistency, catches errors early, and maintains build integrity.

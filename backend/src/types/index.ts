@@ -2,6 +2,7 @@ export interface SpotifyUser {
   id: string;
   display_name: string;
   images: { url: string; width: number; height: number }[];
+  product: string; // "premium" or "free"
 }
 
 export interface SpotifyToken {

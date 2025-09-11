@@ -16,7 +16,8 @@
       "Bash(npm run format:*)",
       "Bash(npm run lint:*)",
       "Bash(npm ls:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)"
     ],
     "deny": [],
     "ask": []

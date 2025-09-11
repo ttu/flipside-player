@@ -4,9 +4,12 @@ import {
   ArtworkState,
   DevicesState,
   VinylState,
+  AlbumState,
   ViewMode,
   VinylSide,
   SpotifyDevice,
+  SpotifyAlbum,
+  SpotifyTrack,
 } from '../types';
 
 interface UIStore {
@@ -14,6 +17,7 @@ interface UIStore {
   artwork: ArtworkState;
   devices: DevicesState;
   vinyl: VinylState;
+  album: AlbumState;
 
   // View actions
   setViewMode: (mode: ViewMode) => void;
@@ -31,13 +35,25 @@ interface UIStore {
   // Vinyl actions
   setActiveSide: (side: VinylSide) => void;
   flipSide: () => void;
+
+  // Album actions
+  setCurrentAlbum: (album: SpotifyAlbum | null) => void;
+  setAlbumTracks: (sideA: SpotifyTrack[], sideB: SpotifyTrack[]) => void;
+  setAlbumLoading: (loading: boolean) => void;
+  getCurrentSideTracks: () => SpotifyTrack[];
 }
 
 export const useUIStore = create<UIStore>((set, get) => ({
   view: { mode: 'vinyl' },
   artwork: { loading: false },
   devices: { devices: [], loading: false },
-  vinyl: { activeSide: 'A' },
+  vinyl: { activeSide: 'A', isFlipping: false, flipProgress: 0 },
+  album: {
+    currentAlbum: null,
+    sideATracks: [],
+    sideBTracks: [],
+    loading: false,
+  },
 
   // View actions
   setViewMode: mode => set(state => ({ view: { ...state.view, mode } })),
@@ -86,9 +102,64 @@ export const useUIStore = create<UIStore>((set, get) => ({
     })),
 
   flipSide: () => {
-    const currentSide = get().vinyl.activeSide;
+    const { vinyl } = get();
+    if (vinyl.isFlipping) return; // Prevent multiple flips
+
+    const currentSide = vinyl.activeSide;
+
+    // Start flip animation
     set(state => ({
-      vinyl: { ...state.vinyl, activeSide: currentSide === 'A' ? 'B' : 'A' },
+      vinyl: { ...state.vinyl, isFlipping: true, flipProgress: 0 },
     }));
+
+    // Animate flip
+    const duration = 800; // 800ms flip animation
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      set(state => ({
+        vinyl: { ...state.vinyl, flipProgress: progress },
+      }));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Complete the flip
+        set(state => ({
+          vinyl: {
+            ...state.vinyl,
+            activeSide: currentSide === 'A' ? 'B' : 'A',
+            isFlipping: false,
+            flipProgress: 0,
+          },
+        }));
+      }
+    };
+
+    requestAnimationFrame(animate);
+  },
+
+  // Album actions
+  setCurrentAlbum: currentAlbum =>
+    set(state => ({
+      album: { ...state.album, currentAlbum },
+    })),
+
+  setAlbumTracks: (sideATracks, sideBTracks) =>
+    set(state => ({
+      album: { ...state.album, sideATracks, sideBTracks },
+    })),
+
+  setAlbumLoading: loading =>
+    set(state => ({
+      album: { ...state.album, loading },
+    })),
+
+  getCurrentSideTracks: () => {
+    const { vinyl, album } = get();
+    return vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
   },
 }));

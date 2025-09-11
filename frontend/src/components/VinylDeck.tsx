@@ -10,7 +10,7 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const { isPlaying, positionMs, durationMs, player } = usePlayerStore();
-  const { vinyl, artwork } = useUIStore();
+  const { vinyl, artwork, album, flipSide } = useUIStore();
 
   const getAngleFromPointer = useCallback((event: MouseEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -47,7 +47,23 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
   const handleCanvasClick = useCallback(
     async (event: MouseEvent) => {
       const canvas = canvasRef.current;
-      if (!canvas || !player || !durationMs) return;
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const clickX = event.clientX - rect.left - centerX;
+      const clickY = event.clientY - rect.top - centerY;
+      const clickRadius = Math.sqrt(clickX * clickX + clickY * clickY);
+
+      // Check if click is on the center area (for flipping)
+      if (clickRadius < 80) {
+        flipSide();
+        return;
+      }
+
+      // Regular seeking behavior
+      if (!player || !durationMs) return;
 
       const angle = getAngleFromPointer(event, canvas);
       const targetTime = getTimeFromAngle(angle);
@@ -58,7 +74,7 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
         console.error('Seek failed:', error);
       }
     },
-    [player, durationMs, getAngleFromPointer, getTimeFromAngle]
+    [player, durationMs, getAngleFromPointer, getTimeFromAngle, flipSide]
   );
 
   const drawVinyl = useCallback(
@@ -69,6 +85,15 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Apply flip transformation if flipping
+      if (vinyl.isFlipping) {
+        const flipScale = Math.cos(vinyl.flipProgress * Math.PI);
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.scale(flipScale, 1);
+        ctx.translate(-centerX, -centerY);
+      }
 
       // Draw vinyl background
       ctx.fillStyle = '#1a1a1a';
@@ -93,45 +118,6 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
       ctx.beginPath();
       ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
       ctx.fill();
-
-      // Draw split line
-      ctx.strokeStyle = '#555';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(centerX - radius, centerY);
-      ctx.lineTo(centerX + radius, centerY);
-      ctx.stroke();
-
-      // Highlight active side
-      const activeAlpha = 0.3;
-      const inactiveAlpha = 0.1;
-
-      // Side A (top half)
-      ctx.fillStyle =
-        vinyl.activeSide === 'A'
-          ? `rgba(255, 255, 255, ${activeAlpha})`
-          : `rgba(255, 255, 255, ${inactiveAlpha})`;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
-      ctx.lineTo(centerX, centerY);
-      ctx.fill();
-
-      // Side B (bottom half)
-      ctx.fillStyle =
-        vinyl.activeSide === 'B'
-          ? `rgba(255, 255, 255, ${activeAlpha})`
-          : `rgba(255, 255, 255, ${inactiveAlpha})`;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI, false);
-      ctx.lineTo(centerX, centerY);
-      ctx.fill();
-
-      // Draw side labels
-      ctx.fillStyle = '#ccc';
-      ctx.font = '24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('A', centerX, centerY - 40);
-      ctx.fillText('B', centerX, centerY + 50);
 
       // Draw needle/progress indicator
       if (durationMs > 0) {
@@ -164,7 +150,8 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
       }
 
       // Album artwork in center if available
-      if (artwork.coverUrl) {
+      const albumCover = album.currentAlbum?.images?.[0]?.url || artwork.coverUrl;
+      if (albumCover) {
         const img = new Image();
         img.onload = () => {
           ctx.save();
@@ -174,10 +161,28 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
           ctx.drawImage(img, centerX - 60, centerY - 60, 120, 120);
           ctx.restore();
         };
-        img.src = artwork.coverUrl;
+        img.src = albumCover;
+      }
+
+      // Add clickable flip indicator in center
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Click to flip', centerX, centerY + 85);
+
+      // Restore context if we were flipping
+      if (vinyl.isFlipping) {
+        ctx.restore();
       }
     },
-    [positionMs, durationMs, vinyl.activeSide, artwork.coverUrl]
+    [
+      positionMs,
+      durationMs,
+      vinyl.isFlipping,
+      vinyl.flipProgress,
+      artwork.coverUrl,
+      album.currentAlbum,
+    ]
   );
 
   const animate = useCallback(() => {
@@ -189,10 +194,10 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
 
     drawVinyl(ctx, canvas);
 
-    if (isPlaying) {
+    if (isPlaying || vinyl.isFlipping) {
       animationRef.current = requestAnimationFrame(animate);
     }
-  }, [isPlaying, drawVinyl]);
+  }, [isPlaying, vinyl.isFlipping, drawVinyl]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -222,7 +227,7 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
   }, [drawVinyl]);
 
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying || vinyl.isFlipping) {
       animate();
     } else {
       if (animationRef.current) {
@@ -241,7 +246,7 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, animate, drawVinyl]);
+  }, [isPlaying, vinyl.isFlipping, animate, drawVinyl]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -253,6 +258,25 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
       canvas.removeEventListener('click', handleCanvasClick);
     };
   }, [handleCanvasClick]);
+
+  // Start playback when side changes
+  useEffect(() => {
+    const currentTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+
+    if (currentTracks.length > 0) {
+      // Start playback of the current side
+      fetch('/api/spotify/play', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          uris: currentTracks.map(track => track.uri),
+        }),
+      }).catch(error => {
+        console.error('Failed to start side playback:', error);
+      });
+    }
+  }, [vinyl.activeSide, album.sideATracks, album.sideBTracks]);
 
   return (
     <div className={`vinyl-deck ${className}`}>

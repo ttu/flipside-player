@@ -23,11 +23,11 @@ FlipSide Player recreates the tangible, ritualistic experience of vinyl record p
 │                  (60% of screen)                        │
 ├─────────────────────────────────────────────────────────┤
 │                 Secondary Focus                         │
-│            Track Info + Controls                        │
+│            Track Listing + Controls                     │
 │                  (25% of screen)                        │
 ├─────────────────────────────────────────────────────────┤
 │                 Tertiary Focus                          │
-│         Queue + Search + Device Controls                │
+│         Premium Warning + Search + Device Controls      │
 │                  (15% of screen)                        │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -98,12 +98,12 @@ The primary interface focusing on current track playback and control.
 - Time elapsed and remaining
 - Draggable position control
 
-**Queue Strip**
+**Premium Warning**
 
-- Horizontal scrolling list of upcoming tracks
-- Visual album art thumbnails
-- Current track highlighted
-- Drag-and-drop reordering
+- Dismissible notification for non-premium Spotify accounts
+- Explains premium requirement for playbook control
+- Direct link to Spotify Premium upgrade page
+- Close button for user dismissal
 
 ### Search Interface
 
@@ -118,15 +118,15 @@ Modal or slide-out interface for discovering and adding music.
 │                                                         │
 │  ┌─────┐  Artist Name - Track Title                     │
 │  │ Art │  Album Name • Year                             │
-│  └─────┘  Duration    [➕ Add to Queue]                 │
+│  └─────┘  Duration    [▶️ Play Album]                   │
 │                                                         │
-│  ┌─────┐  Artist Name - Track Title                     │
-│  │ Art │  Album Name • Year                             │
-│  └─────┘  Duration    [➕ Add to Queue]                 │
+│  ┌─────┐  Artist Name - Album Title                     │
+│  │ Art │  Artist Name • Year • Track Count              │
+│  └─────┘  Duration    [▶️ Play Album]                   │
 │                                                         │
-│  ┌─────┐  Artist Name - Track Title                     │
-│  │ Art │  Album Name • Year                             │
-│  └─────┘  Duration    [➕ Add to Queue]                 │
+│  ┌─────┐  Artist Name - Album Title                     │
+│  │ Art │  Artist Name • Year • Track Count              │
+│  └─────┘  Duration    [▶️ Play Album]                   │
 │                                                         │
 │                    [Load More]                          │
 └─────────────────────────────────────────────────────────┘

@@ -71,9 +71,14 @@ export function useSpotifyPlayer() {
             name: track.name || '',
             artists: track.artists || [],
             album: {
-              id: track.album?.id || '',
+              id: track.album?.uri?.split(':')[2] || '',
               name: track.album?.name || '',
-              images: track.album?.images || [],
+              images:
+                track.album?.images?.map(img => ({
+                  url: img.url,
+                  width: img.width || 640,
+                  height: img.height || 640,
+                })) || [],
             },
             uri: track.uri || '',
             duration_ms: track.duration_ms || 0,

@@ -164,4 +164,47 @@ export class SpotifyAPI {
       throw new Error('Failed to transfer playback');
     }
   }
+
+  async getAlbum(accessToken: string, albumId: string): Promise<any> {
+    const response = await fetch(`${SPOTIFY_BASE_URL}/albums/${albumId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get album');
+    }
+
+    return response.json();
+  }
+
+  async startPlayback(accessToken: string, deviceId?: string, uris?: string[]): Promise<void> {
+    const body: any = {};
+    if (uris) body.uris = uris;
+    if (deviceId) body.device_id = deviceId;
+
+    const response = await fetch(`${SPOTIFY_BASE_URL}/me/player/play`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorDetails = `HTTP ${response.status}: ${response.statusText}`;
+
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = `${errorDetails} - ${errorJson.error?.message || errorText}`;
+      } catch {
+        errorDetails = `${errorDetails} - ${errorText}`;
+      }
+
+      throw new Error(`Failed to start playback: ${errorDetails}`);
+    }
+  }
 }

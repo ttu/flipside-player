@@ -131,10 +131,10 @@ fastify.post('/auth/logout', async (request, reply) => {
 
 #### `GET /api/me`
 
-Returns current authenticated user profile with automatic token refresh.
+Returns current authenticated user profile with automatic token refresh and premium account detection.
 
 **Authentication**: Required (session cookie)  
-**Response**: Spotify user profile object
+**Response**: Spotify user profile object including `product` field for premium detection
 
 **Implementation**:
 
