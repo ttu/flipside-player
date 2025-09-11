@@ -72,7 +72,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Store session data
       (request.session as any).set('user', sessionData);
 
-      // Redirect to the frontend served from the same origin
+      // Redirect to the frontend (same origin)
       return reply.redirect('/');
     } catch (error: any) {
       fastify.log.error('Authentication failed with error:', error.message);

@@ -10,7 +10,8 @@ FlipSide Player is a Spotify music player built with React (frontend) and Fastif
 - **Backend**: Fastify + TypeScript + Redis sessions
 - **Authentication**: Spotify OAuth 2.0 with PKCE flow
 - **Session Management**: @fastify/secure-session with Redis storage
-- **Deployment**: Single origin via reverse proxy (no CORS issues)
+- **Development**: Vite proxy for same-origin requests (no CORS)
+- **Production**: Single origin via reverse proxy
 
 ## Development Commands
 
@@ -50,10 +51,11 @@ npm run dev        # Serves both frontend and API from localhost:3001
 ```
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/api/auth/spotify/callback
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:5173/api/auth/spotify/callback
 SESSION_SECRET=your_secure_session_secret_key_must_be_at_least_32_characters
 REDIS_URL=redis://localhost:6379
-PORT=3001
+NODE_ENV=development
+PORT=5174
 ```
 
 ### Frontend (.env)
@@ -106,16 +108,29 @@ VITE_APP_NAME="FlipSide Player"
 
 ## Development Workflow
 
-### Option 1: Automatic (Recommended)
+### Option 1: Fast Development (Recommended)
+
+Use Vite dev server with proxy for fast hot-reload development:
+
+1. Ensure Redis is running: `docker start redis-flipside`
+2. Start backend: `cd backend && npm run dev` (runs on port 5174)
+3. Start frontend: `cd frontend && npm run dev` (runs on port 5173, listens on all interfaces)
+4. Access app at http://127.0.0.1:5173 or http://localhost:5173 (Vite dev server)
+
+The Vite dev server proxies `/api` requests to the backend at `localhost:5174`. This creates a same-origin setup where all requests appear to come from the frontend port, enabling session cookies to work without CORS issues.
+
+### Option 2: Production-like (with build)
+
+Use this for testing the production build:
 
 1. Ensure Redis is running: `docker start redis-flipside`
 2. Start with auto-build: `cd backend && npm run dev:build`
 3. Access app at http://localhost:3001
 
-### Option 2: Manual
+### Option 3: Manual Build
 
 1. Ensure Redis is running: `docker start redis-flipside`
-2. Build frontend: `cd frontend && npx vite build`
+2. Build frontend: `cd frontend && npm run build`
 3. Start backend: `cd backend && npm run dev`
 4. Access app at http://localhost:3001
 
@@ -131,10 +146,10 @@ VITE_APP_NAME="FlipSide Player"
 - **Problem**: Sessions not working across requests
 - **Solution**: Ensure Redis is running, check session secret length (≥32 chars)
 
-### OAuth Callback 404
+### OAuth Callback Issues
 
-- **Problem**: Spotify redirect URI mismatch
-- **Solution**: Update Spotify app settings to use `/api/auth/spotify/callback`
+- **Problem**: "Invalid redirect URI" or "Site can't be reached"
+- **Solution**: Update Spotify app settings to use `http://127.0.0.1:5173/api/auth/spotify/callback` and ensure Vite dev server is configured with `host: '0.0.0.0'`
 
 ### TypeScript Build Errors
 
@@ -167,9 +182,9 @@ docker start redis-flipside
 ## Notes
 
 - No JWT tokens used - pure session-based authentication
-- Frontend build required before backend serves static files
-- All temporary debugging code has been removed
-- CORS package removed (not needed with reverse proxy)
+- Development uses Vite proxy for same-origin requests (no CORS)
+- Production serves frontend build from backend (reverse proxy)
+- Session cookies work seamlessly in both development and production modes
 
 ## Documentation
 

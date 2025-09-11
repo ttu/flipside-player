@@ -86,7 +86,9 @@ async function start() {
       return reply.send({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
-    const port = parseInt(process.env.PORT || '3001', 10);
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const defaultPort = isDevelopment ? '5174' : '3001';
+    const port = parseInt(process.env.PORT || defaultPort, 10);
     const host = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
 
     await fastify.listen({ port, host });
