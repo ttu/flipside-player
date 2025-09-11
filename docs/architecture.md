@@ -6,34 +6,34 @@ FlipSide Player is built as a modern, single-page application (SPA) with a clear
 
 ### Frontend Technologies
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **React** | 18.x | UI library for building interactive components |
-| **TypeScript** | 5.x | Type safety and enhanced developer experience |
-| **Vite** | 5.x | Build tool and development server |
-| **Zustand** | 4.x | Lightweight state management |
-| **Tailwind CSS** | 3.x | Utility-first CSS framework |
-| **Spotify Web SDK** | Latest | Direct browser-based Spotify playback |
+| Technology          | Version | Purpose                                        |
+| ------------------- | ------- | ---------------------------------------------- |
+| **React**           | 18.x    | UI library for building interactive components |
+| **TypeScript**      | 5.x     | Type safety and enhanced developer experience  |
+| **Vite**            | 5.x     | Build tool and development server              |
+| **Zustand**         | 4.x     | Lightweight state management                   |
+| **Tailwind CSS**    | 3.x     | Utility-first CSS framework                    |
+| **Spotify Web SDK** | Latest  | Direct browser-based Spotify playback          |
 
 ### Backend Technologies
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Fastify** | 4.x | High-performance web framework |
-| **TypeScript** | 5.x | Type safety and enhanced developer experience |
-| **@fastify/secure-session** | 7.x | Session management with Redis |
-| **@fastify/static** | 6.x | Static file serving for reverse proxy |
-| **Redis** | 7.x | Session storage and caching |
-| **Zod** | 3.x | Runtime schema validation |
+| Technology                  | Version | Purpose                                       |
+| --------------------------- | ------- | --------------------------------------------- |
+| **Fastify**                 | 4.x     | High-performance web framework                |
+| **TypeScript**              | 5.x     | Type safety and enhanced developer experience |
+| **@fastify/secure-session** | 7.x     | Session management with Redis                 |
+| **@fastify/static**         | 6.x     | Static file serving for reverse proxy         |
+| **Redis**                   | 7.x     | Session storage and caching                   |
+| **Zod**                     | 3.x     | Runtime schema validation                     |
 
 ### Development & Deployment
 
-| Tool | Purpose |
-|------|---------|
-| **tsx** | TypeScript execution for development |
-| **ESLint** | Code linting and formatting |
-| **Docker** | Redis containerization |
-| **npm workspaces** | Monorepo management |
+| Tool               | Purpose                              |
+| ------------------ | ------------------------------------ |
+| **tsx**            | TypeScript execution for development |
+| **ESLint**         | Code linting and formatting          |
+| **Docker**         | Redis containerization               |
+| **npm workspaces** | Monorepo management                  |
 
 ## System Architecture Overview
 
@@ -73,12 +73,14 @@ FlipSide Player is built as a modern, single-page application (SPA) with a clear
 FlipSide Player uses a reverse proxy architecture where the Fastify backend serves both the static frontend files and API endpoints from the same origin.
 
 **Benefits:**
+
 - No CORS issues (same-origin requests)
 - Simplified session cookie management
 - Single deployment target
 - Better security (no cross-origin concerns)
 
 **Implementation:**
+
 ```typescript
 // Backend serves frontend static files
 await fastify.register(fastifyStatic, {
@@ -98,7 +100,7 @@ flipside-player/
 ├── backend/                 # Fastify backend application
 │   ├── src/
 │   │   ├── routes/         # API route handlers
-│   │   ├── utils/          # Utilities and helpers  
+│   │   ├── utils/          # Utilities and helpers
 │   │   └── types/          # TypeScript type definitions
 │   └── package.json
 ├── frontend/               # React frontend application
@@ -116,7 +118,7 @@ flipside-player/
 1. **Frontend Development**: Build static files with Vite
 2. **Backend Development**: Serve built frontend + API with Fastify
 3. **Integration**: Single origin eliminates development CORS issues
-4. **Testing**: API endpoints accessible at localhost:3001/api/*
+4. **Testing**: API endpoints accessible at localhost:3001/api/\*
 
 ## Authentication Architecture
 
@@ -207,7 +209,7 @@ interface AuthState {
   loading: boolean;
 }
 
-// Player State  
+// Player State
 interface PlayerState {
   currentTrack?: SpotifyTrack;
   isPlaying: boolean;
@@ -456,6 +458,7 @@ interface QueueState {
 **Alternatives Considered**: Vue.js, Vanilla JavaScript
 
 **Reasons**:
+
 - Excellent ecosystem for interactive UIs
 - Strong TypeScript support
 - Extensive third-party libraries
@@ -467,6 +470,7 @@ interface QueueState {
 **Alternatives Considered**: Express.js, NestJS
 
 **Reasons**:
+
 - Superior performance characteristics
 - Built-in TypeScript support
 - Schema-based validation
@@ -479,6 +483,7 @@ interface QueueState {
 **Alternatives Considered**: Redux Toolkit, React Context
 
 **Reasons**:
+
 - Minimal boilerplate
 - Excellent performance for real-time updates
 - TypeScript-first design
@@ -490,6 +495,7 @@ interface QueueState {
 **Alternatives Considered**: JWT tokens
 
 **Reasons**:
+
 - Eliminates CORS complexity with reverse proxy
 - Secure server-side token storage
 - Established session management patterns

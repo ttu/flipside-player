@@ -5,10 +5,11 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 ## Features
 
 ### MVP Features ✅
+
 - **Spotify OAuth 2.0 Authentication** - Secure PKCE flow with token management
 - **Vinyl Interface** - Interactive vinyl disk split into Side A and Side B
 - **Needle Drop Seeking** - Click/drag on active vinyl side to seek through tracks
-- **Side Flipping** - Toggle between Side A (first half) and Side B (second half) 
+- **Side Flipping** - Toggle between Side A (first half) and Side B (second half)
 - **Album Artwork** - Displays largest available Spotify album art
 - **Cover View Toggle** - Switch between vinyl and full-cover views
 - **Search & Queue** - Search Spotify catalog and build playback queue
@@ -16,7 +17,7 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 - **Spotify Connect** - List and switch between available devices
 - **Keyboard Controls** - Full keyboard navigation support
   - `Space` - Play/pause
-  - `F` - Flip vinyl sides  
+  - `F` - Flip vinyl sides
   - `C` - Toggle vinyl/cover view
   - `←/→` - Seek ±5 seconds
   - `Shift + ←/→` - Seek ±30 seconds
@@ -24,7 +25,7 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 ### Architecture
 
 - **Frontend**: React + TypeScript + Vite
-- **Backend**: Node.js + Fastify + TypeScript  
+- **Backend**: Node.js + Fastify + TypeScript
 - **Audio**: Spotify Web Playback SDK (loaded via CDN)
 - **State**: Zustand for client state management
 - **Storage**: Redis for sessions and caching
@@ -32,7 +33,7 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 
 ## Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - Redis server
 - Spotify Premium account
 - Spotify app registration
@@ -46,8 +47,9 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 3. Add redirect URIs (following Spotify's security requirements):
    - Development: `http://127.0.0.1:3001/auth/spotify/callback`
    - Production: `https://yourdomain.com/auth/spotify/callback`
-   
+
    **Note**: Spotify requires explicit loopback IPs - `localhost` is not allowed
+
 4. Note your Client ID and Client Secret
 
 ### 2. Quick Install
@@ -66,7 +68,7 @@ Or install manually:
 # Install root dependencies
 npm install
 
-# Install backend dependencies  
+# Install backend dependencies
 cd backend && npm install
 
 # Install frontend dependencies
@@ -76,15 +78,17 @@ cd ../frontend && npm install
 ### 3. Environment Configuration
 
 #### Backend (.env)
+
 ```bash
 cd backend
 cp .env.example .env
 ```
 
 Edit `backend/.env`:
+
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret  
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/auth/spotify/callback
 SESSION_SECRET=your_secure_random_session_secret_32_chars_minimum
 REDIS_URL=redis://localhost:6379
@@ -93,18 +97,21 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 **Important**: The `SESSION_SECRET` must be at least 32 characters long. Generate one with:
+
 ```bash
 # Generate a secure session secret
 openssl rand -hex 32
 ```
 
 #### Frontend (.env)
+
 ```bash
 cd ../frontend
 cp .env.example .env
 ```
 
 Edit `frontend/.env`:
+
 ```env
 VITE_API_BASE_URL=http://localhost:3001
 VITE_APP_NAME="FlipSide Player"
@@ -113,6 +120,7 @@ VITE_APP_NAME="FlipSide Player"
 ### 4. Start Redis
 
 Make sure Redis is running:
+
 ```bash
 redis-server
 # or
@@ -124,6 +132,7 @@ brew services start redis  # macOS with Homebrew
 #### Development Mode
 
 From the root directory:
+
 ```bash
 # Start both backend and frontend
 npm run dev
@@ -169,6 +178,7 @@ npm run docker:dev
 Create production environment files:
 
 `backend/.env.production`:
+
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
@@ -181,12 +191,14 @@ NODE_ENV=production
 ```
 
 `frontend/.env.production`:
+
 ```env
 VITE_API_BASE_URL=https://yourdomain.com
 VITE_APP_NAME="FlipSide Player"
 ```
 
 **Docker Services:**
+
 - **Redis**: Session storage and caching on port 6379
 - **Backend**: API server on port 3001
 - **Frontend**: React app on port 5173 (dev) or served via reverse proxy (prod)
@@ -197,7 +209,7 @@ VITE_APP_NAME="FlipSide Player"
 2. **Search**: Use the search bar to find tracks
 3. **Queue**: Click search results to add to queue
 4. **Play**: Use transport controls or click queue items
-5. **Vinyl Interaction**: 
+5. **Vinyl Interaction**:
    - Click/drag on active vinyl half to seek
    - Use flip button or press `F` to switch sides
 6. **Views**: Toggle between vinyl and cover views with `C`
@@ -206,12 +218,13 @@ VITE_APP_NAME="FlipSide Player"
 ## Development
 
 ### Project Structure
+
 ```
 flipside-player/
 ├── backend/           # Node.js API server
 │   ├── src/
 │   │   ├── routes/    # Auth and Spotify API routes
-│   │   ├── types/     # TypeScript definitions  
+│   │   ├── types/     # TypeScript definitions
 │   │   └── utils/     # Spotify API client, Redis
 │   └── package.json
 ├── frontend/          # React application
@@ -226,16 +239,18 @@ flipside-player/
 ```
 
 ### Key Components
+
 - **VinylDeck**: Canvas-based vinyl interface with seeking
-- **CoverView**: Full album artwork display  
+- **CoverView**: Full album artwork display
 - **SearchBar**: Debounced Spotify search with results
 - **PlayerControls**: Transport controls and progress
 - **QueueStrip**: Draggable queue management
 - **DevicePicker**: Spotify Connect device switcher
 
 ### API Endpoints
+
 - `GET /auth/spotify/start` - Start OAuth flow
-- `GET /auth/spotify/callback` - Handle OAuth callback  
+- `GET /auth/spotify/callback` - Handle OAuth callback
 - `POST /auth/logout` - Clear session
 - `GET /me` - Get current user
 - `GET /spotify/token` - Get access token for SDK
@@ -259,7 +274,7 @@ flipside-player/
    - Ensure Spotify Premium subscription
    - Check browser compatibility (Chrome/Firefox/Safari)
 
-2. **Authentication fails**  
+2. **Authentication fails**
    - Verify Spotify app redirect URI matches exactly
    - Check client ID/secret in backend .env
 
@@ -272,8 +287,9 @@ flipside-player/
    - Check if another app is using Spotify
 
 ### Browser Requirements
+
 - Modern browsers with Web Audio API support
-- Spotify Premium account  
+- Spotify Premium account
 - Third-party cookies enabled
 
 ## License

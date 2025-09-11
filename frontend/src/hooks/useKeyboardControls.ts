@@ -9,8 +9,7 @@ export function useKeyboardControls() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Don't handle if user is typing in an input
-      if (event.target instanceof HTMLInputElement || 
-          event.target instanceof HTMLTextAreaElement) {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         return;
       }
 
@@ -40,7 +39,7 @@ export function useKeyboardControls() {
           event.preventDefault();
           if (player) {
             const seekAmount = event.shiftKey ? 30000 : 5000; // 30s or 5s
-            player.getCurrentState().then((state) => {
+            player.getCurrentState().then(state => {
               if (state) {
                 const newPosition = Math.max(0, state.position - seekAmount);
                 player.seek(newPosition);
@@ -53,7 +52,7 @@ export function useKeyboardControls() {
           event.preventDefault();
           if (player) {
             const seekAmount = event.shiftKey ? 30000 : 5000; // 30s or 5s
-            player.getCurrentState().then((state) => {
+            player.getCurrentState().then(state => {
               if (state) {
                 const newPosition = Math.min(state.duration, state.position + seekAmount);
                 player.seek(newPosition);
@@ -68,7 +67,7 @@ export function useKeyboardControls() {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };

@@ -11,7 +11,7 @@ interface AuthStore extends AuthState {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set, _get) => ({
   isAuthenticated: false,
   user: undefined,
   loading: true,
@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
       });
       set({ isAuthenticated: false, user: undefined });
     } catch (error) {
@@ -35,9 +35,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   checkAuth: async () => {
     try {
       set({ loading: true });
-      
+
       const response = await fetch(`${API_BASE_URL}/me`, {
-        credentials: 'include'
+        credentials: 'include',
       });
 
       if (response.ok) {

@@ -8,7 +8,7 @@ interface QueueStore extends QueueState {
   clearQueue: () => void;
 }
 
-export const useQueueStore = create<QueueStore>((set, get) => ({
+export const useQueueStore = create<QueueStore>((set, _get) => ({
   items: [],
 
   addTrack: (track: SpotifyTrack) => {
@@ -22,19 +22,19 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
       id: `${track.id}-${Date.now()}`,
     };
 
-    set((state) => ({
+    set(state => ({
       items: [...state.items, queueItem],
     }));
   },
 
   removeTrack: (id: string) => {
-    set((state) => ({
+    set(state => ({
       items: state.items.filter(item => item.id !== id),
     }));
   },
 
   reorderQueue: (fromIndex: number, toIndex: number) => {
-    set((state) => {
+    set(state => {
       const items = [...state.items];
       const [removed] = items.splice(fromIndex, 1);
       items.splice(toIndex, 0, removed);

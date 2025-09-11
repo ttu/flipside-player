@@ -15,9 +15,7 @@ export function ViewToggle({ className = '' }: ViewToggleProps) {
       title={`Switch to ${view.mode === 'vinyl' ? 'cover' : 'vinyl'} view (C)`}
     >
       {view.mode === 'vinyl' ? '🎵' : '💿'}
-      <span className="view-label">
-        {view.mode === 'vinyl' ? 'Cover' : 'Vinyl'}
-      </span>
+      <span className="view-label">{view.mode === 'vinyl' ? 'Cover' : 'Vinyl'}</span>
     </button>
   );
 }

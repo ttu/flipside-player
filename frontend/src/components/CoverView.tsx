@@ -23,23 +23,25 @@ export function CoverView({ className = '' }: CoverViewProps) {
   return (
     <div className={`cover-view ${className}`}>
       {artwork.coverUrl ? (
-        <img 
-          src={artwork.coverUrl} 
-          alt={track ? `${track.album.name} by ${track.artists.map(a => a.name).join(', ')}` : 'Album cover'}
+        <img
+          src={artwork.coverUrl}
+          alt={
+            track
+              ? `${track.album.name} by ${track.artists.map(a => a.name).join(', ')}`
+              : 'Album cover'
+          }
           className="album-cover"
           style={{ objectFit: 'contain' }}
         />
       ) : (
         <div className="placeholder-cover">♪</div>
       )}
-      
+
       {track && (
         <div className="track-info-overlay">
           <div className="track-info">
             <h2 className="track-title">{track.name}</h2>
-            <h3 className="track-artist">
-              {track.artists.map(a => a.name).join(', ')}
-            </h3>
+            <h3 className="track-artist">{track.artists.map(a => a.name).join(', ')}</h3>
             <h4 className="track-album">{track.album.name}</h4>
           </div>
         </div>

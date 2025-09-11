@@ -59,24 +59,26 @@ export function useSpotifyPlayer() {
     });
 
     // Player state changed
-    player.addListener('player_state_changed', (state) => {
+    player.addListener('player_state_changed', state => {
       if (!state) {
         return;
       }
 
       const track = state.track_window.current_track;
-      const spotifyTrack = track ? {
-        id: track.id || '',
-        name: track.name || '',
-        artists: track.artists || [],
-        album: {
-          id: track.album?.id || '',
-          name: track.album?.name || '',
-          images: track.album?.images || [],
-        },
-        uri: track.uri || '',
-        duration_ms: track.duration_ms || 0,
-      } : null;
+      const spotifyTrack = track
+        ? {
+            id: track.id || '',
+            name: track.name || '',
+            artists: track.artists || [],
+            album: {
+              id: track.album?.id || '',
+              name: track.album?.name || '',
+              images: track.album?.images || [],
+            },
+            uri: track.uri || '',
+            duration_ms: track.duration_ms || 0,
+          }
+        : null;
 
       playerStore.updatePlaybackState({
         isPlaying: !state.paused,
@@ -87,8 +89,9 @@ export function useSpotifyPlayer() {
 
       // Update artwork
       if (spotifyTrack?.album.images.length) {
-        const largestImage = spotifyTrack.album.images
-          .sort((a, b) => (b.width || 0) - (a.width || 0))[0];
+        const largestImage = spotifyTrack.album.images.sort(
+          (a, b) => (b.width || 0) - (a.width || 0)
+        )[0];
         uiStore.setArtwork(largestImage.url);
       }
     });
@@ -96,7 +99,7 @@ export function useSpotifyPlayer() {
     playerStore.setPlayer(player);
 
     // Connect to the player
-    player.connect().then((success) => {
+    player.connect().then(success => {
       if (success) {
         console.log('Successfully connected to Spotify Player');
       } else {
@@ -110,6 +113,7 @@ export function useSpotifyPlayer() {
       playerStore.setPlayer(null);
       playerStore.setPlayerReady(false);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return playerStore;

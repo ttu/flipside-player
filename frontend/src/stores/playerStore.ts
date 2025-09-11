@@ -14,7 +14,7 @@ interface PlayerStore extends PlaybackState {
   setDeviceId: (deviceId: string) => void;
 }
 
-export const usePlayerStore = create<PlayerStore>((set, get) => ({
+export const usePlayerStore = create<PlayerStore>((set, _get) => ({
   isPlaying: false,
   positionMs: 0,
   durationMs: 0,
@@ -24,19 +24,19 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   player: null,
   playerReady: false,
 
-  setPlayer: (player) => set({ player }),
+  setPlayer: player => set({ player }),
 
-  setPlayerReady: (playerReady) => set({ playerReady }),
+  setPlayerReady: playerReady => set({ playerReady }),
 
-  updatePlaybackState: (state) => set((current) => ({ ...current, ...state })),
+  updatePlaybackState: state => set(current => ({ ...current, ...state })),
 
-  setTrack: (track) => set({ track, durationMs: track?.duration_ms || 0 }),
+  setTrack: track => set({ track, durationMs: track?.duration_ms || 0 }),
 
-  setIsPlaying: (isPlaying) => set({ isPlaying }),
+  setIsPlaying: isPlaying => set({ isPlaying }),
 
-  setPosition: (positionMs) => set({ positionMs }),
+  setPosition: positionMs => set({ positionMs }),
 
-  setVolume: (volume) => set({ volume }),
+  setVolume: volume => set({ volume }),
 
-  setDeviceId: (deviceId) => set({ deviceId }),
+  setDeviceId: deviceId => set({ deviceId }),
 }));

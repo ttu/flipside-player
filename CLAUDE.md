@@ -1,9 +1,11 @@
 # FlipSide Player - Claude Code Reference
 
 ## Project Overview
+
 FlipSide Player is a Spotify music player built with React (frontend) and Fastify (backend), featuring session-based authentication and a reverse proxy architecture.
 
 ## Architecture
+
 - **Frontend**: React + TypeScript + Vite (served via reverse proxy)
 - **Backend**: Fastify + TypeScript + Redis sessions
 - **Authentication**: Spotify OAuth 2.0 with PKCE flow
@@ -13,6 +15,7 @@ FlipSide Player is a Spotify music player built with React (frontend) and Fastif
 ## Development Commands
 
 ### Backend
+
 ```bash
 cd backend/
 npm run dev        # Start development server with hot reload
@@ -22,6 +25,7 @@ npm run lint       # Run ESLint
 ```
 
 ### Frontend
+
 ```bash
 cd frontend/
 npm run dev        # Start Vite dev server (not used in reverse proxy setup)
@@ -31,6 +35,7 @@ npm run type-check # Run TypeScript type checking
 ```
 
 ### Full Application
+
 ```bash
 # Start the complete application (from backend directory)
 npm run dev        # Serves both frontend and API from localhost:3001
@@ -39,6 +44,7 @@ npm run dev        # Serves both frontend and API from localhost:3001
 ## Environment Variables
 
 ### Backend (.env)
+
 ```
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
@@ -49,6 +55,7 @@ PORT=3001
 ```
 
 ### Frontend (.env)
+
 ```
 VITE_API_BASE_URL=/api
 VITE_APP_NAME="FlipSide Player"
@@ -57,6 +64,7 @@ VITE_APP_NAME="FlipSide Player"
 ## Key Implementation Details
 
 ### Authentication Flow
+
 1. User clicks login → redirects to `/api/auth/spotify/start`
 2. Backend generates PKCE challenge, stores in Redis, redirects to Spotify
 3. Spotify redirects back to `/api/auth/spotify/callback`
@@ -64,18 +72,21 @@ VITE_APP_NAME="FlipSide Player"
 5. Frontend uses session cookies for subsequent API calls
 
 ### Session Management
+
 - Uses @fastify/secure-session with Redis backend
 - Session data includes: userId, accessToken, refreshToken, tokenExpires
 - Automatic token refresh when tokens expire
 - httpOnly: false for debugging (consider true for production)
 
 ### Reverse Proxy Setup
+
 - Backend serves frontend static files from `/Users/ttu/src/github/flipside-player/frontend/dist`
 - API routes prefixed with `/api`
 - Frontend uses relative URLs (`/api/...`) to avoid CORS
 - Single origin: http://localhost:3001
 
 ### API Routes
+
 - `GET /api/auth/spotify/start` - Initiate OAuth flow
 - `GET /api/auth/spotify/callback` - OAuth callback handler
 - `POST /api/auth/logout` - Clear session
@@ -86,11 +97,13 @@ VITE_APP_NAME="FlipSide Player"
 - `GET /api/health` - Health check endpoint
 
 ## Prerequisites
+
 - Redis server running on localhost:6379
 - Spotify app configured with correct redirect URI
 - Node.js and npm installed
 
 ## Development Workflow
+
 1. Ensure Redis is running: `docker start redis-flipside`
 2. Build frontend: `cd frontend && npx vite build`
 3. Start backend: `cd backend && npm run dev`
@@ -99,22 +112,27 @@ VITE_APP_NAME="FlipSide Player"
 ## Common Issues & Solutions
 
 ### CORS Errors
+
 - **Problem**: Frontend making requests to different origins
 - **Solution**: Use reverse proxy setup, ensure VITE_API_BASE_URL=/api
 
 ### Session Not Persisting
+
 - **Problem**: Sessions not working across requests
 - **Solution**: Ensure Redis is running, check session secret length (≥32 chars)
 
 ### OAuth Callback 404
+
 - **Problem**: Spotify redirect URI mismatch
 - **Solution**: Update Spotify app settings to use `/api/auth/spotify/callback`
 
 ### TypeScript Build Errors
+
 - **Problem**: TS errors preventing build
 - **Solution**: Use `npx vite build` to skip TS check, or fix errors individually
 
 ## Testing Commands
+
 ```bash
 # Test health endpoint
 curl http://localhost:3001/api/health
@@ -127,6 +145,7 @@ curl http://localhost:3001/api/me -H "Cookie: sessionId=..."
 ```
 
 ## Docker Commands
+
 ```bash
 # Start Redis
 docker run --rm -d --name redis-flipside -p 6379:6379 redis:alpine
@@ -136,11 +155,11 @@ docker start redis-flipside
 ```
 
 ## Notes
+
 - No JWT tokens used - pure session-based authentication
 - Frontend build required before backend serves static files
 - All temporary debugging code has been removed
 - CORS package removed (not needed with reverse proxy)
-
 
 ## Documentation
 
@@ -158,7 +177,8 @@ Comprehensive documentation is available in the `/docs` folder. Use these files 
 - **`learnings.md`**: Technical insights, best practices, and solutions discovered during development
 - **`todo.md`**: Current tasks and planned improvements (✅ done, ⏳ in progress, ❌ not started)
 
-important files at root folder   
+important files at root folder
+
 - `README.md`: **Comprehensive setup guide**, tool descriptions, usage examples, and API key instructions
 
 When making changes, update relevant documentation files to keep them current with the codebase.

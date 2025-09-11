@@ -11,11 +11,13 @@ This guide covers the most frequently encountered issues during development and 
 ### Issue: "Not authenticated" errors despite successful login
 
 **Symptoms:**
+
 - User completes Spotify OAuth but API calls return 401
 - Browser shows session cookies but backend doesn't recognize them
 - `/api/me` endpoint returns authentication failure
 
 **Diagnostic Steps:**
+
 ```bash
 # 1. Check if session exists in Redis
 docker exec -it redis-flipside redis-cli
@@ -33,22 +35,24 @@ tail -f backend_logs.log | grep "session"
 **Common Causes & Solutions:**
 
 1. **Redis Connection Issues**
+
    ```bash
    # Check Redis is running
    docker ps | grep redis
-   
+
    # Start Redis if not running
    docker start redis-flipside
-   
+
    # Test Redis connection
    redis-cli ping
    ```
 
 2. **Session Secret Mismatch**
+
    ```bash
    # Verify session secret is at least 32 characters
    echo $SESSION_SECRET | wc -c
-   
+
    # Generate new secure secret if needed
    openssl rand -hex 32
    ```
@@ -61,16 +65,19 @@ tail -f backend_logs.log | grep "session"
 ### Issue: OAuth callback returns 404 "Route not found"
 
 **Symptoms:**
+
 - Spotify redirects to callback URL but gets 404 error
 - URL shows `/auth/spotify/callback` instead of `/api/auth/spotify/callback`
 
 **Solution:**
+
 1. **Update Spotify App Settings**
    - Go to https://developer.spotify.com/dashboard
    - Select your app → Settings
    - Update Redirect URI to: `http://127.0.0.1:3001/api/auth/spotify/callback`
 
 2. **Verify Environment Variables**
+
    ```bash
    # Check backend .env file
    grep SPOTIFY_REDIRECT_URI backend/.env
@@ -88,6 +95,7 @@ tail -f backend_logs.log | grep "session"
 ### Issue: CORS errors in browser console
 
 **Symptoms:**
+
 - `Access to fetch at 'http://localhost:3001/...' from origin 'http://127.0.0.1:3001' has been blocked by CORS policy`
 - Network requests fail with CORS errors
 
@@ -95,18 +103,21 @@ tail -f backend_logs.log | grep "session"
 Different origins (localhost vs 127.0.0.1) treated as separate domains by browsers
 
 **Solution:**
+
 1. **Use Consistent URLs**
+
    ```bash
    # Always use the same origin for both frontend and backend
    # Either http://localhost:3001 OR http://127.0.0.1:3001, not mixed
    ```
 
 2. **Verify Frontend Configuration**
+
    ```bash
    # Check frontend .env
    cat frontend/.env
    # Should show: VITE_API_BASE_URL=/api
-   
+
    # Rebuild frontend if changed
    cd frontend && npx vite build
    ```
@@ -119,11 +130,13 @@ Different origins (localhost vs 127.0.0.1) treated as separate domains by browse
 ### Issue: "Failed to fetch" errors for API calls
 
 **Symptoms:**
+
 - Network requests fail silently
 - Browser DevTools show failed requests
 - No specific error messages in console
 
 **Diagnostic Steps:**
+
 ```bash
 # 1. Test API endpoints directly
 curl http://localhost:3001/api/health
@@ -136,16 +149,19 @@ grep -r "register.*Routes" backend/src/
 ```
 
 **Solutions:**
+
 1. **Backend Not Running**
+
    ```bash
    cd backend && npm run dev
    ```
 
 2. **Port Conflicts**
+
    ```bash
    # Kill processes using port 3001
    lsof -ti:3001 | xargs kill -9
-   
+
    # Start backend
    npm run dev
    ```
@@ -161,11 +177,13 @@ grep -r "register.*Routes" backend/src/
 ### Issue: "Premium account required" for playback
 
 **Symptoms:**
+
 - Search works but playback controls don't function
 - Spotify Web SDK fails to initialize player
 - Device doesn't appear in Spotify Connect list
 
 **Solution:**
+
 - Spotify Web SDK requires Premium subscription
 - Inform users about Premium requirement
 - Consider fallback to preview clips for free users
@@ -173,20 +191,23 @@ grep -r "register.*Routes" backend/src/
 ### Issue: No devices available for playback
 
 **Symptoms:**
+
 - Device selector shows no available devices
 - "No active device" errors when trying to play music
 
 **Solutions:**
+
 1. **Open Spotify App**
    - Open Spotify desktop app or mobile app
    - Start playing any track to make device active
    - Device should appear in FlipSide Player
 
 2. **Initialize Web SDK Device**
+
    ```javascript
    // Ensure Spotify Web SDK is properly initialized
    // Check browser console for SDK errors
-   window.Spotify.Player.getInstance().connect()
+   window.Spotify.Player.getInstance().connect();
    ```
 
 3. **Check Device Permissions**
@@ -196,11 +217,13 @@ grep -r "register.*Routes" backend/src/
 ### Issue: Token refresh failures
 
 **Symptoms:**
+
 - User logged in but API calls return 401 after some time
 - "Token expired" errors in backend logs
 - Automatic token refresh not working
 
 **Diagnostic Steps:**
+
 ```bash
 # Check token expiration in session
 redis-cli GET session:YOUR_SESSION_ID | jq '.tokenExpires'
@@ -210,7 +233,9 @@ date +%s
 ```
 
 **Solutions:**
+
 1. **Verify Refresh Token Logic**
+
    ```typescript
    // Check if refresh token is being stored and used
    // Verify token refresh endpoint is working
@@ -227,10 +252,12 @@ date +%s
 ### Issue: Frontend build fails with TypeScript errors
 
 **Symptoms:**
+
 - `npm run build` fails with TS errors
 - Development works but production build fails
 
 **Solution:**
+
 ```bash
 # Skip TypeScript checking for build (temporary)
 cd frontend && npx vite build
@@ -242,11 +269,14 @@ cd frontend && npx vite build
 ### Issue: Hot reload not working in development
 
 **Symptoms:**
+
 - Changes to code don't reflect in browser
 - Need to manually refresh page for updates
 
 **Solutions:**
+
 1. **Use Correct Development Setup**
+
    ```bash
    # Don't run Vite dev server separately
    # Only run backend dev server which serves built frontend
@@ -263,25 +293,29 @@ cd frontend && npx vite build
 ### Issue: Redis connection failures
 
 **Symptoms:**
+
 - Backend fails to start with Redis connection errors
 - "ECONNREFUSED" errors in logs
 
 **Solutions:**
+
 1. **Start Redis**
+
    ```bash
    # Start Redis container
    docker start redis-flipside
-   
+
    # Or create new one if doesn't exist
    docker run --rm -d --name redis-flipside -p 6379:6379 redis:alpine
    ```
 
 2. **Check Redis Configuration**
+
    ```bash
    # Verify Redis URL in environment
    echo $REDIS_URL
    # Should be: redis://localhost:6379
-   
+
    # Test Redis connectivity
    redis-cli ping
    ```
@@ -293,15 +327,18 @@ cd frontend && npx vite build
 ### Issue: Slow page loading
 
 **Symptoms:**
+
 - Initial page load takes several seconds
 - Large bundle sizes in network tab
 
 **Solutions:**
+
 1. **Optimize Bundle Size**
+
    ```bash
    # Analyze bundle size
    cd frontend && npx vite build --analyze
-   
+
    # Implement code splitting if needed
    ```
 
@@ -313,11 +350,14 @@ cd frontend && npx vite build
 ### Issue: Memory leaks in browser
 
 **Symptoms:**
+
 - Browser memory usage increases over time
 - Page becomes slow after extended use
 
 **Solutions:**
+
 1. **Check for Memory Leaks**
+
    ```javascript
    // Use browser DevTools → Memory tab
    // Take heap snapshots to identify leaks
@@ -335,15 +375,18 @@ cd frontend && npx vite build
 ### Issue: Environment variables not loading
 
 **Symptoms:**
+
 - Backend fails to start with missing environment variables
 - Features work in development but fail in production
 
 **Solutions:**
+
 1. **Verify Environment Files**
+
    ```bash
    # Check all required variables are set
    grep -v "^#" backend/.env | grep -v "^$"
-   
+
    # Validate variable lengths (session secret, etc.)
    ```
 
@@ -356,11 +399,14 @@ cd frontend && npx vite build
 ### Issue: HTTPS redirect loops
 
 **Symptoms:**
+
 - Site redirects infinitely between HTTP and HTTPS
 - SSL certificate errors
 
 **Solutions:**
+
 1. **Configure Reverse Proxy**
+
    ```nginx
    # Nginx configuration example
    proxy_set_header X-Forwarded-Proto $scheme;
@@ -396,12 +442,12 @@ curl -H "Cookie: sessionId=your-session" http://localhost:3001/api/me
 
 ```javascript
 // Access state stores in browser console
-window.__ZUSTAND_AUTH_STORE__ = useAuthStore.getState()
-window.__ZUSTAND_PLAYER_STORE__ = usePlayerStore.getState()
+window.__ZUSTAND_AUTH_STORE__ = useAuthStore.getState();
+window.__ZUSTAND_PLAYER_STORE__ = usePlayerStore.getState();
 
 // Check localStorage/sessionStorage
-localStorage.getItem('key')
-sessionStorage.getItem('key')
+localStorage.getItem('key');
+sessionStorage.getItem('key');
 
 // Monitor network requests
 // DevTools → Network → Filter by XHR/Fetch

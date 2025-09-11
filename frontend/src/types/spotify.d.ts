@@ -15,10 +15,13 @@ declare namespace Spotify {
     setName(name: string): Promise<void>;
     setVolume(volume: number): Promise<void>;
     togglePlay(): Promise<void>;
-    
+
     addListener(event: 'ready', callback: (data: { device_id: string }) => void): void;
     addListener(event: 'not_ready', callback: (data: { device_id: string }) => void): void;
-    addListener(event: 'player_state_changed', callback: (state: WebPlaybackState | null) => void): void;
+    addListener(
+      event: 'player_state_changed',
+      callback: (state: WebPlaybackState | null) => void
+    ): void;
     addListener(event: 'initialization_error', callback: (data: { message: string }) => void): void;
     addListener(event: 'authentication_error', callback: (data: { message: string }) => void): void;
     addListener(event: 'account_error', callback: (data: { message: string }) => void): void;
@@ -65,7 +68,12 @@ declare namespace Spotify {
     album: {
       uri: string;
       name: string;
-      images: Array<{ url: string; size?: number; width?: number; height?: number }>;
+      images: Array<{
+        url: string;
+        size?: number;
+        width?: number;
+        height?: number;
+      }>;
     };
     duration_ms: number;
   }

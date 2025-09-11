@@ -71,18 +71,21 @@ The primary interface focusing on current track playback and control.
 #### Key Components
 
 **Vinyl Deck Component**
+
 - Large circular vinyl record with album artwork as label
 - Smooth rotation animation during playback
 - Responsive size (scales with screen size)
 - Subtle shadows and 3D effects for depth
 
 **Track Information**
+
 - Artist name (primary, larger font)
-- Track title (secondary, medium font)  
+- Track title (secondary, medium font)
 - Album name (tertiary, smaller font)
 - Clean, hierarchical typography
 
 **Playback Controls**
+
 - Large, circular play/pause button (primary action)
 - Skip forward/backward (secondary actions)
 - Shuffle, repeat, favorite (tertiary actions)
@@ -90,11 +93,13 @@ The primary interface focusing on current track playback and control.
 - Volume slider
 
 **Progress Indicator**
+
 - Visual progress bar with current position
 - Time elapsed and remaining
 - Draggable position control
 
 **Queue Strip**
+
 - Horizontal scrolling list of upcoming tracks
 - Visual album art thumbnails
 - Current track highlighted
@@ -186,26 +191,26 @@ line-height: 1.4;
 
 ```css
 /* Primary Colors */
---primary-bg: #0f0f0f;      /* Deep black background */
---secondary-bg: #1a1a1a;    /* Card/component backgrounds */
---accent-bg: #2a2a2a;       /* Hover states, borders */
+--primary-bg: #0f0f0f; /* Deep black background */
+--secondary-bg: #1a1a1a; /* Card/component backgrounds */
+--accent-bg: #2a2a2a; /* Hover states, borders */
 
 /* Text Colors */
---text-primary: #ffffff;     /* Main text, artist names */
---text-secondary: #b3b3b3;   /* Secondary text, track info */
---text-tertiary: #6b7280;    /* Meta text, timestamps */
+--text-primary: #ffffff; /* Main text, artist names */
+--text-secondary: #b3b3b3; /* Secondary text, track info */
+--text-tertiary: #6b7280; /* Meta text, timestamps */
 
 /* Accent Colors */
---spotify-green: #1db954;    /* Primary actions, Spotify branding */
---vinyl-gold: #d4af37;       /* Vinyl-inspired accent color */
---error-red: #ef4444;        /* Error states */
---warning-yellow: #f59e0b;   /* Warning states */
+--spotify-green: #1db954; /* Primary actions, Spotify branding */
+--vinyl-gold: #d4af37; /* Vinyl-inspired accent color */
+--error-red: #ef4444; /* Error states */
+--warning-yellow: #f59e0b; /* Warning states */
 
 /* Component Colors */
---vinyl-black: #1c1c1c;      /* Vinyl record surface */
---vinyl-label: #8b5a2b;      /* Vinyl record label */
---progress-bg: #404040;      /* Progress bar background */
---progress-fill: #1db954;    /* Progress bar fill */
+--vinyl-black: #1c1c1c; /* Vinyl record surface */
+--vinyl-label: #8b5a2b; /* Vinyl record label */
+--progress-bg: #404040; /* Progress bar background */
+--progress-fill: #1db954; /* Progress bar fill */
 ```
 
 ### Button Styles
@@ -243,11 +248,13 @@ line-height: 1.4;
 ### Vinyl Deck Interactions
 
 **Visual States:**
+
 - **Stopped**: Static record, no rotation
 - **Playing**: Smooth 33⅓ RPM rotation animation
 - **Loading**: Subtle pulse effect while loading track
 
 **Interactive Elements:**
+
 - **Click to Play/Pause**: Center of vinyl acts as play button
 - **Hover Effects**: Subtle scale and glow on hover
 - **Loading States**: Shimmer effect while track loads
@@ -255,11 +262,13 @@ line-height: 1.4;
 ### Queue Management
 
 **Drag and Drop:**
+
 - Visual feedback during drag operations
 - Drop zones with clear visual indicators
 - Smooth animations for reordering
 
 **Add to Queue:**
+
 - Instant visual feedback when adding tracks
 - Toast notifications for user confirmation
 - Queue updates with smooth transitions
@@ -267,6 +276,7 @@ line-height: 1.4;
 ### Device Switching
 
 **Connection Flow:**
+
 - Clear status indicators for each device
 - Loading states during connection
 - Success/error feedback for connection attempts
@@ -309,8 +319,12 @@ line-height: 1.4;
 
 ```css
 @keyframes vinyl-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .vinyl-playing {
@@ -327,27 +341,31 @@ line-height: 1.4;
 ### Loading States
 
 - **Skeleton screens**: Content placeholders during loading
-- **Progressive loading**: Images and data load in priority order  
+- **Progressive loading**: Images and data load in priority order
 - **Smooth state changes**: No jarring jumps between loading/loaded states
 
 ## Accessibility Features
 
 ### Keyboard Navigation
+
 - Full keyboard navigation support
 - Focus indicators on all interactive elements
 - Skip links for screen readers
 
 ### Screen Reader Support
+
 - Proper ARIA labels and descriptions
 - Live regions for dynamic content updates
 - Semantic HTML structure
 
 ### Visual Accessibility
+
 - High contrast ratios for all text
 - Color is not the only way to convey information
 - Scalable interface for zoom levels up to 200%
 
 ### Motor Accessibility
+
 - Large touch targets (minimum 44px)
 - No required precise movements
 - All functionality available via keyboard
@@ -355,16 +373,19 @@ line-height: 1.4;
 ## Performance Considerations
 
 ### Image Optimization
+
 - Album artwork lazy loading
 - Multiple resolution serving
 - WebP format support with fallbacks
 
 ### Animation Performance
+
 - GPU-accelerated transforms
 - RequestAnimationFrame for smooth animations
 - Reduced motion preferences respected
 
 ### Memory Management
+
 - Efficient queue rendering (virtualization for large queues)
 - Image caching and cleanup
 - Proper component unmounting

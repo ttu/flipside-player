@@ -75,12 +75,12 @@ function App() {
           <h1 className="app-title">FlipSide Player</h1>
           <SearchBar className="header-search" />
         </div>
-        
+
         <div className="header-right">
           <ViewToggle />
           <div className="user-menu">
-            <img 
-              src={user?.images?.[0]?.url || '/default-avatar.png'} 
+            <img
+              src={user?.images?.[0]?.url || '/default-avatar.png'}
               alt={user?.display_name || 'User'}
               className="user-avatar"
             />
@@ -98,7 +98,7 @@ function App() {
               <CoverView className="main-view" />
             )}
           </div>
-          
+
           {view.mode === 'vinyl' && (
             <div className="vinyl-controls">
               <FlipButton />

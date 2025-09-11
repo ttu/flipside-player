@@ -17,11 +17,8 @@ export class SpotifyAPI {
 
   generatePKCEChallenge(): { codeVerifier: string; codeChallenge: string } {
     const codeVerifier = crypto.randomBytes(96).toString('base64url');
-    const codeChallenge = crypto
-      .createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
-    
+    const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+
     return { codeVerifier, codeChallenge };
   }
 
@@ -29,7 +26,8 @@ export class SpotifyAPI {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.clientId,
-      scope: 'streaming user-read-playback-state user-modify-playback-state user-read-email user-read-private',
+      scope:
+        'streaming user-read-playback-state user-modify-playback-state user-read-email user-read-private',
       redirect_uri: this.redirectUri,
       state,
       code_challenge_method: 'S256',
@@ -52,7 +50,7 @@ export class SpotifyAPI {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
+          Authorization: `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
         },
         body: body,
       });
@@ -62,7 +60,7 @@ export class SpotifyAPI {
         console.error('Token exchange failed:', {
           status: response.status,
           statusText: response.statusText,
-          error
+          error,
         });
         throw new Error(`Token exchange failed (${response.status}): ${error}`);
       }
@@ -80,7 +78,7 @@ export class SpotifyAPI {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
+        Authorization: `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
@@ -99,7 +97,7 @@ export class SpotifyAPI {
   async getCurrentUser(accessToken: string): Promise<SpotifyUser> {
     const response = await fetch(`${SPOTIFY_BASE_URL}/me`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -110,7 +108,12 @@ export class SpotifyAPI {
     return response.json() as Promise<SpotifyUser>;
   }
 
-  async search(accessToken: string, query: string, type = 'track', limit = 20): Promise<SpotifySearchResult> {
+  async search(
+    accessToken: string,
+    query: string,
+    type = 'track',
+    limit = 20
+  ): Promise<SpotifySearchResult> {
     const params = new URLSearchParams({
       q: query,
       type,
@@ -119,7 +122,7 @@ export class SpotifyAPI {
 
     const response = await fetch(`${SPOTIFY_BASE_URL}/search?${params.toString()}`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -133,7 +136,7 @@ export class SpotifyAPI {
   async getDevices(accessToken: string): Promise<{ devices: SpotifyDevice[] }> {
     const response = await fetch(`${SPOTIFY_BASE_URL}/me/player/devices`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -148,7 +151,7 @@ export class SpotifyAPI {
     const response = await fetch(`${SPOTIFY_BASE_URL}/me/player`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

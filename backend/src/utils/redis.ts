@@ -12,7 +12,7 @@ export async function initRedis(redisUrl?: string): Promise<RedisClientType> {
     url: redisUrl || 'redis://localhost:6379',
   });
 
-  redisClient.on('error', (err) => {
+  redisClient.on('error', err => {
     console.error('Redis Client Error:', err);
   });
 

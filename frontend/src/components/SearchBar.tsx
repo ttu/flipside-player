@@ -13,7 +13,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const searchRef = useRef<HTMLDivElement>(null);
   const { addTrack } = useQueueStore();
@@ -40,15 +40,18 @@ export function SearchBar({ className = '' }: SearchBarProps) {
     }
   }, []);
 
-  const debouncedSearch = useCallback((searchQuery: string) => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+  const debouncedSearch = useCallback(
+    (searchQuery: string) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
 
-    searchTimeoutRef.current = setTimeout(() => {
-      performSearch(searchQuery);
-    }, 300);
-  }, [performSearch]);
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 300);
+    },
+    [performSearch]
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -113,12 +116,8 @@ export function SearchBar({ className = '' }: SearchBarProps) {
             <div className="search-error">{error}</div>
           ) : results.length > 0 ? (
             <ul className="results-list">
-              {results.map((track) => (
-                <li
-                  key={track.id}
-                  className="result-item"
-                  onClick={() => handleTrackSelect(track)}
-                >
+              {results.map(track => (
+                <li key={track.id} className="result-item" onClick={() => handleTrackSelect(track)}>
                   <div className="track-info">
                     {track.album.images[0] && (
                       <img

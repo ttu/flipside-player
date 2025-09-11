@@ -42,18 +42,21 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
     }
   }, [player]);
 
-  const handleVolumeChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!player) return;
+  const handleVolumeChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!player) return;
 
-    const newVolume = parseFloat(e.target.value);
-    
-    try {
-      await player.setVolume(newVolume);
-      usePlayerStore.getState().setVolume(newVolume);
-    } catch (error) {
-      console.error('Volume change failed:', error);
-    }
-  }, [player]);
+      const newVolume = parseFloat(e.target.value);
+
+      try {
+        await player.setVolume(newVolume);
+        usePlayerStore.getState().setVolume(newVolume);
+      } catch (error) {
+        console.error('Volume change failed:', error);
+      }
+    },
+    [player]
+  );
 
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -66,7 +69,7 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
   return (
     <div className={`player-controls ${className}`}>
       <div className="transport-controls">
-        <button 
+        <button
           className="control-button prev-button"
           onClick={handlePrevious}
           disabled={!player}
@@ -74,8 +77,8 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
         >
           ⏮
         </button>
-        
-        <button 
+
+        <button
           className="control-button play-pause-button"
           onClick={handlePlayPause}
           disabled={!player}
@@ -83,8 +86,8 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
         >
           {isPlaying ? '⏸' : '▶'}
         </button>
-        
-        <button 
+
+        <button
           className="control-button next-button"
           onClick={handleNext}
           disabled={!player}
@@ -95,22 +98,15 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
       </div>
 
       <div className="progress-section">
-        <span className="time-display current-time">
-          {formatTime(positionMs)}
-        </span>
-        
+        <span className="time-display current-time">{formatTime(positionMs)}</span>
+
         <div className="progress-bar-container">
           <div className="progress-bar">
-            <div 
-              className="progress-fill"
-              style={{ width: `${progressPercentage}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${progressPercentage}%` }} />
           </div>
         </div>
-        
-        <span className="time-display total-time">
-          {formatTime(durationMs)}
-        </span>
+
+        <span className="time-display total-time">{formatTime(durationMs)}</span>
       </div>
 
       <div className="volume-section">

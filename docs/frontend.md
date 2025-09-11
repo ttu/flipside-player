@@ -71,18 +71,21 @@ The primary interface focusing on current track playback and control.
 #### Key Components
 
 **Vinyl Deck Component**
+
 - Large circular vinyl record with album artwork as label
 - Smooth rotation animation during playback
 - Responsive size (scales with screen size)
 - Subtle shadows and 3D effects for depth
 
 **Track Information**
+
 - Artist name (primary, larger font)
-- Track title (secondary, medium font)  
+- Track title (secondary, medium font)
 - Album name (tertiary, smaller font)
 - Clean, hierarchical typography
 
 **Playback Controls**
+
 - Large, circular play/pause button (primary action)
 - Skip forward/backward (secondary actions)
 - Shuffle, repeat, favorite (tertiary actions)
@@ -90,11 +93,13 @@ The primary interface focusing on current track playback and control.
 - Volume slider
 
 **Progress Indicator**
+
 - Visual progress bar with current position
 - Time elapsed and remaining
 - Draggable position control
 
 **Queue Strip**
+
 - Horizontal scrolling list of upcoming tracks
 - Visual album art thumbnails
 - Current track highlighted
@@ -186,26 +191,26 @@ line-height: 1.4;
 
 ```css
 /* Primary Colors */
---primary-bg: #0f0f0f;      /* Deep black background */
---secondary-bg: #1a1a1a;    /* Card/component backgrounds */
---accent-bg: #2a2a2a;       /* Hover states, borders */
+--primary-bg: #0f0f0f; /* Deep black background */
+--secondary-bg: #1a1a1a; /* Card/component backgrounds */
+--accent-bg: #2a2a2a; /* Hover states, borders */
 
 /* Text Colors */
---text-primary: #ffffff;     /* Main text, artist names */
---text-secondary: #b3b3b3;   /* Secondary text, track info */
---text-tertiary: #6b7280;    /* Meta text, timestamps */
+--text-primary: #ffffff; /* Main text, artist names */
+--text-secondary: #b3b3b3; /* Secondary text, track info */
+--text-tertiary: #6b7280; /* Meta text, timestamps */
 
 /* Accent Colors */
---spotify-green: #1db954;    /* Primary actions, Spotify branding */
---vinyl-gold: #d4af37;       /* Vinyl-inspired accent color */
---error-red: #ef4444;        /* Error states */
---warning-yellow: #f59e0b;   /* Warning states */
+--spotify-green: #1db954; /* Primary actions, Spotify branding */
+--vinyl-gold: #d4af37; /* Vinyl-inspired accent color */
+--error-red: #ef4444; /* Error states */
+--warning-yellow: #f59e0b; /* Warning states */
 
 /* Component Colors */
---vinyl-black: #1c1c1c;      /* Vinyl record surface */
---vinyl-label: #8b5a2b;      /* Vinyl record label */
---progress-bg: #404040;      /* Progress bar background */
---progress-fill: #1db954;    /* Progress bar fill */
+--vinyl-black: #1c1c1c; /* Vinyl record surface */
+--vinyl-label: #8b5a2b; /* Vinyl record label */
+--progress-bg: #404040; /* Progress bar background */
+--progress-fill: #1db954; /* Progress bar fill */
 ```
 
 ### Button Styles
@@ -261,16 +266,16 @@ interface PlayerState {
   isPlaying: boolean;
   position: number;
   duration: number;
-  
+
   // Playback Settings
   volume: number;
   shuffleState: boolean;
   repeatState: 'off' | 'context' | 'track';
-  
+
   // Device Information
   device?: SpotifyDevice;
   availableDevices: SpotifyDevice[];
-  
+
   // Actions
   play: () => void;
   pause: () => void;
@@ -284,7 +289,7 @@ interface QueueState {
   tracks: SpotifyTrack[];
   currentIndex: number;
   history: SpotifyTrack[];
-  
+
   // Actions
   addToQueue: (track: SpotifyTrack) => void;
   removeFromQueue: (index: number) => void;
@@ -298,11 +303,13 @@ interface QueueState {
 ### Vinyl Deck Interactions
 
 **Visual States:**
+
 - **Stopped**: Static record, no rotation
 - **Playing**: Smooth 33⅓ RPM rotation animation
 - **Loading**: Subtle pulse effect while loading track
 
 **Interactive Elements:**
+
 - **Click to Play/Pause**: Center of vinyl acts as play button
 - **Hover Effects**: Subtle scale and glow on hover
 - **Loading States**: Shimmer effect while track loads
@@ -310,11 +317,13 @@ interface QueueState {
 ### Queue Management
 
 **Drag and Drop:**
+
 - Visual feedback during drag operations
 - Drop zones with clear visual indicators
 - Smooth animations for reordering
 
 **Add to Queue:**
+
 - Instant visual feedback when adding tracks
 - Toast notifications for user confirmation
 - Queue updates with smooth transitions
@@ -322,6 +331,7 @@ interface QueueState {
 ### Device Switching
 
 **Connection Flow:**
+
 - Clear status indicators for each device
 - Loading states during connection
 - Success/error feedback for connection attempts
@@ -364,8 +374,12 @@ interface QueueState {
 
 ```css
 @keyframes vinyl-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .vinyl-playing {
@@ -382,7 +396,7 @@ interface QueueState {
 ### Loading States
 
 - **Skeleton screens**: Content placeholders during loading
-- **Progressive loading**: Images and data load in priority order  
+- **Progressive loading**: Images and data load in priority order
 - **Smooth state changes**: No jarring jumps between loading/loaded states
 
 ## Custom Hooks
@@ -397,7 +411,7 @@ interface UseSpotifyPlayerReturn {
   isPlaying: boolean;
   position: number;
   device: SpotifyDevice | null;
-  
+
   // Controls
   play: () => Promise<void>;
   pause: () => Promise<void>;
@@ -419,15 +433,15 @@ const useSpotifyPlayer = (accessToken: string): UseSpotifyPlayerReturn => {
 ```typescript
 const useDebounce = <T>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => clearTimeout(handler);
   }, [value, delay]);
-  
+
   return debouncedValue;
 };
 ```
@@ -451,9 +465,9 @@ const QueueList = ({ tracks }) => {
   return (
     <div className="queue-list">
       {tracks.map((track, index) => (
-        <QueueItem 
-          key={track.id} 
-          track={track} 
+        <QueueItem
+          key={track.id}
+          track={track}
           index={index}
         />
       ))}
@@ -466,8 +480,8 @@ const QueueList = ({ tracks }) => {
 
 ```typescript
 const AlbumArt = ({ src, alt, size = 'medium' }) => (
-  <img 
-    src={src} 
+  <img
+    src={src}
     alt={alt}
     className={`album-art album-art-${size}`}
     loading="lazy"
@@ -489,21 +503,21 @@ class MusicPlayerErrorBoundary extends React.Component {
     super(props);
     this.state = { hasError: false, error: null };
   }
-  
+
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
-  
+
   componentDidCatch(error, errorInfo) {
     console.error('Music player error:', error, errorInfo);
     // Log to error reporting service
   }
-  
+
   render() {
     if (this.state.hasError) {
       return <ErrorFallback error={this.state.error} />;
     }
-    
+
     return this.props.children;
   }
 }
@@ -525,7 +539,7 @@ const useSpotifyAPI = () => {
       toast.error('Something went wrong. Please try again.');
     }
   };
-  
+
   return { handleAPIError };
 };
 ```
@@ -533,24 +547,28 @@ const useSpotifyAPI = () => {
 ## Accessibility Features
 
 ### Keyboard Navigation
+
 - Full keyboard navigation support with Tab/Shift+Tab
 - Focus indicators on all interactive elements
 - Skip links for screen readers
 - Arrow key navigation in lists
 
 ### Screen Reader Support
+
 - Proper ARIA labels and descriptions
 - Live regions for dynamic content updates
 - Semantic HTML structure
 - Role attributes for custom controls
 
 ### Visual Accessibility
+
 - High contrast ratios (WCAG AA compliant)
 - Color is not the only way to convey information
 - Scalable interface for zoom levels up to 200%
 - Reduced motion preferences respected
 
 ### Motor Accessibility
+
 - Large touch targets (minimum 44px)
 - No required precise movements
 - All functionality available via keyboard

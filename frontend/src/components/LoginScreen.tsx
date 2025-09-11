@@ -19,9 +19,7 @@ export function LoginScreen() {
         <button onClick={login} className="login-button">
           Connect with Spotify
         </button>
-        <p className="premium-note">
-          Note: Spotify Premium subscription required for playback
-        </p>
+        <p className="premium-note">Note: Spotify Premium subscription required for playback</p>
       </div>
     </div>
   );
