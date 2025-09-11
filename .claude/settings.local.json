@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(npm install)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run dev:*)",
+      "Bash(docker run:*)",
+      "Bash(curl:*)",
+      "Bash(npm uninstall:*)",
+      "Read(//private/tmp/**)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx vite:*)",
+      "Bash(docker start:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
