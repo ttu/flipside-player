@@ -1,72 +1,27 @@
-# Dependencies
-node_modules/
-**/node_modules/
-
 # Build outputs
 dist/
 build/
-**/dist/
-**/build/
+.next/
+out/
 
-# Environment files
-.env
-.env.*
+# Dependencies
+node_modules/
 
 # Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# Environment files
+.env*
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# nyc test coverage
-.nyc_output
-
-# ESLint cache
-.eslintcache
-
-# Parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-
-# Editor directories and files
+# IDE
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
-# OS generated files
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db

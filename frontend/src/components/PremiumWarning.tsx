@@ -1,16 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { registerPremiumWarningCallback } from '../utils/premiumWarning';
 
 const PREMIUM_WARNING_DISMISSED_KEY = 'flipside-premium-warning-dismissed';
-
-// Global state for triggering premium warning on play attempts
-let showPremiumWarningCallback: (() => void) | null = null;
-
-export const triggerPremiumWarning = () => {
-  if (showPremiumWarningCallback) {
-    showPremiumWarningCallback();
-  }
-};
 
 export function PremiumWarning() {
   const { user } = useAuthStore();
@@ -29,16 +21,16 @@ export function PremiumWarning() {
     }
 
     // Register callback for triggering warning on play attempts
-    showPremiumWarningCallback = () => {
+    registerPremiumWarningCallback(() => {
       if (user && user.product !== 'premium') {
         setShowDueToPlayAttempt(true);
         setIsVisible(true);
       }
-    };
+    });
 
     // Cleanup callback on unmount
     return () => {
-      showPremiumWarningCallback = null;
+      registerPremiumWarningCallback(null);
     };
   }, [user]);
 

@@ -20,6 +20,6 @@ module.exports = {
     'no-unused-vars': 'off',
     'no-undef': 'off',
     'no-redeclare': 'off',
-    'prettier/prettier': 'error',
+    'prettier/prettier': ['error', {}, { usePrettierrc: true }],
   },
 };

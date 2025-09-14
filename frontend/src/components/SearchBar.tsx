@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { searchAlbums, getFullAlbum, splitAlbumIntoSides } from '../utils/spotify';
 import { useUIStore } from '../stores/uiStore';
 import { usePlayerStore } from '../stores/playerStore';
-import { triggerPremiumWarning } from './PremiumWarning';
+import { triggerPremiumWarning } from '../utils/premiumWarning';
 import { SpotifyAlbum } from '../types';
 
 interface SearchBarProps {

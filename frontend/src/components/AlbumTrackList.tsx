@@ -1,6 +1,6 @@
 import { useUIStore } from '../stores/uiStore';
 import { usePlayerStore } from '../stores/playerStore';
-import { triggerPremiumWarning } from './PremiumWarning';
+import { triggerPremiumWarning } from '../utils/premiumWarning';
 import { SpotifyTrack } from '../types';
 
 interface AlbumTrackListProps {

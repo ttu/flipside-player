@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '../stores/playerStore';
 import { useUIStore } from '../stores/uiStore';
-import { triggerPremiumWarning } from './PremiumWarning';
+import { triggerPremiumWarning } from '../utils/premiumWarning';
 
 interface VinylDeckProps {
   className?: string;

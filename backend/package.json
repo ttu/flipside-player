@@ -9,8 +9,8 @@
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . --config ../.prettierrc --ignore-path ../.prettierignore",
+    "format:check": "prettier --check . --config ../.prettierrc --ignore-path ../.prettierignore",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

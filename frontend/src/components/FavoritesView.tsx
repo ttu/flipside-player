@@ -4,7 +4,7 @@ import { usePlayerStore } from '../stores/playerStore';
 import { getFullAlbum, splitAlbumIntoSides } from '../utils/spotify';
 import { FavoriteAlbum, SpotifyAlbum, SpotifyTrack } from '../types';
 import { StorageSettings, StorageType } from './StorageSettings';
-import { triggerPremiumWarning } from './PremiumWarning';
+import { triggerPremiumWarning } from '../utils/premiumWarning';
 
 interface FavoritesViewProps {
   className?: string;
