@@ -5,7 +5,7 @@ import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { useUIStore } from './stores/uiStore';
 import { LoginScreen } from './components/LoginScreen';
 import { VinylDeck } from './components/VinylDeck';
-import { CoverView } from './components/CoverView';
+import { FavoritesView } from './components/FavoritesView';
 import { SearchBar } from './components/SearchBar';
 import { PlayerControls } from './components/PlayerControls';
 import { DevicePicker } from './components/DevicePicker';
@@ -93,12 +93,12 @@ function App() {
       <PremiumWarning />
 
       <main className="app-main">
-        <div className="player-section">
+        <div className={`player-section ${view.mode}`}>
           <div className={`view-container ${view.mode}`}>
             {view.mode === 'vinyl' ? (
               <VinylDeck className="main-view" />
             ) : (
-              <CoverView className="main-view" />
+              <FavoritesView className="main-view" />
             )}
           </div>
 

@@ -7,10 +7,21 @@ interface AlbumTrackListProps {
 }
 
 export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
-  const { album, vinyl } = useUIStore();
+  const { album, vinyl, addFavorite, removeFavorite, isFavorite } = useUIStore();
   const { track: currentTrack } = usePlayerStore();
 
   const currentTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+
+  const formatDuration = (durationMs: number) => {
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const calculateSideDuration = (tracks: SpotifyTrack[]) => {
+    const totalMs = tracks.reduce((sum, track) => sum + track.duration_ms, 0);
+    return formatDuration(totalMs);
+  };
 
   const handleTrackClick = async (track: SpotifyTrack) => {
     try {
@@ -41,6 +52,16 @@ export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
     return currentTrack?.id === track.id;
   };
 
+  const handleFavoriteToggle = () => {
+    if (!album.currentAlbum) return;
+
+    if (isFavorite(album.currentAlbum.id)) {
+      removeFavorite(album.currentAlbum.id);
+    } else {
+      addFavorite(album.currentAlbum);
+    }
+  };
+
   if (!album.currentAlbum) {
     return (
       <div className={`album-track-list ${className}`}>
@@ -60,17 +81,26 @@ export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
             alt={album.currentAlbum.name}
             className="cover-image"
           />
+          <button
+            className={`album-favorite-toggle ${isFavorite(album.currentAlbum.id) ? 'is-favorite' : ''}`}
+            onClick={handleFavoriteToggle}
+            title={isFavorite(album.currentAlbum.id) ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            ♥
+          </button>
         </div>
         <div className="album-info">
           <h2 className="album-title">{album.currentAlbum.name}</h2>
           <p className="album-artist">{album.currentAlbum.artists.map(a => a.name).join(', ')}</p>
           <p className="album-year">{new Date(album.currentAlbum.release_date).getFullYear()}</p>
-          <p className="album-side">Side {vinyl.activeSide}</p>
         </div>
       </div>
 
       <div className="track-list">
-        <h3 className="side-title">Side {vinyl.activeSide} Tracks</h3>
+        <div className="side-title">
+          <h3>Side {vinyl.activeSide} Tracks</h3>
+          <span className="side-duration">{calculateSideDuration(currentTracks)}</span>
+        </div>
         <ul className="tracks">
           {currentTracks.map((track, index) => (
             <li
@@ -80,10 +110,7 @@ export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
             >
               <div className="track-number">{index + 1}</div>
               <div className="track-name">{track.name}</div>
-              <div className="track-duration">
-                {Math.floor(track.duration_ms / 60000)}:
-                {String(Math.floor((track.duration_ms % 60000) / 1000)).padStart(2, '0')}
-              </div>
+              <div className="track-duration">{formatDuration(track.duration_ms)}</div>
               {isCurrentTrack(track) && <div className="currently-playing">♪</div>}
             </li>
           ))}

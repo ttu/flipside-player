@@ -53,7 +53,7 @@ export interface PlaybackState {
   volume: number; // 0..1
 }
 
-export type ViewMode = 'vinyl' | 'cover';
+export type ViewMode = 'vinyl' | 'favorites';
 
 export interface ViewState {
   mode: ViewMode;
@@ -100,4 +100,10 @@ export interface AlbumState {
   sideATracks: SpotifyTrack[];
   sideBTracks: SpotifyTrack[];
   loading: boolean;
+}
+
+export interface FavoriteAlbum {
+  id: string;
+  album: SpotifyAlbum;
+  dateAdded: string;
 }

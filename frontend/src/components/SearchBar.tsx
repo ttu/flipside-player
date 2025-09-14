@@ -17,7 +17,14 @@ export function SearchBar({ className = '' }: SearchBarProps) {
 
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const searchRef = useRef<HTMLDivElement>(null);
-  const { setCurrentAlbum, setAlbumTracks, setAlbumLoading } = useUIStore();
+  const {
+    setCurrentAlbum,
+    setAlbumTracks,
+    setAlbumLoading,
+    addFavorite,
+    removeFavorite,
+    isFavorite,
+  } = useUIStore();
   const { player } = usePlayerStore();
 
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -110,6 +117,15 @@ export function SearchBar({ className = '' }: SearchBarProps) {
     }
   };
 
+  const handleFavoriteToggle = (e: React.MouseEvent, album: SpotifyAlbum) => {
+    e.stopPropagation(); // Prevent album selection when clicking favorite button
+    if (isFavorite(album.id)) {
+      removeFavorite(album.id);
+    } else {
+      addFavorite(album);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       setShowResults(false);
@@ -175,6 +191,13 @@ export function SearchBar({ className = '' }: SearchBarProps) {
                       <div className="album-year">{new Date(album.release_date).getFullYear()}</div>
                       <div className="album-tracks">{album.total_tracks} tracks</div>
                     </div>
+                    <button
+                      className={`favorite-toggle ${isFavorite(album.id) ? 'is-favorite' : ''}`}
+                      onClick={e => handleFavoriteToggle(e, album)}
+                      title={isFavorite(album.id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      ♥
+                    </button>
                   </div>
                 </li>
               ))}

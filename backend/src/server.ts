@@ -6,6 +6,7 @@ import path from 'path';
 import { initRedis } from './utils/redis';
 import { authRoutes } from './routes/auth';
 import { spotifyRoutes } from './routes/spotify';
+import { favoritesRoutes } from './routes/favorites';
 
 // Load environment variables
 config();
@@ -80,6 +81,7 @@ async function start() {
     // Register API routes with /api prefix
     await fastify.register(authRoutes, { prefix: '/api' });
     await fastify.register(spotifyRoutes, { prefix: '/api' });
+    await fastify.register(favoritesRoutes, { prefix: '/api' });
 
     // Health check
     fastify.get('/api/health', async (_, reply) => {
