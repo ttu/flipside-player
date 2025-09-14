@@ -1,5 +1,6 @@
 import { useUIStore } from '../stores/uiStore';
 import { usePlayerStore } from '../stores/playerStore';
+import { triggerPremiumWarning } from './PremiumWarning';
 import { SpotifyTrack } from '../types';
 
 interface AlbumTrackListProps {
@@ -41,7 +42,11 @@ export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Playback failed:', errorData);
-        // Could show a toast notification here
+
+        // Check if it's a premium requirement error
+        if (response.status === 403) {
+          triggerPremiumWarning();
+        }
       }
     } catch (error) {
       console.error('Failed to start playback:', error);

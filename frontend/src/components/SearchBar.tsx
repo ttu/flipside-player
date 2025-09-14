@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { searchAlbums, getFullAlbum, splitAlbumIntoSides } from '../utils/spotify';
 import { useUIStore } from '../stores/uiStore';
 import { usePlayerStore } from '../stores/playerStore';
+import { triggerPremiumWarning } from './PremiumWarning';
 import { SpotifyAlbum } from '../types';
 
 interface SearchBarProps {
@@ -98,6 +99,12 @@ export function SearchBar({ className = '' }: SearchBarProps) {
           if (!response.ok) {
             const errorData = await response.json();
             console.error('Playback failed:', errorData);
+
+            // Check if it's a premium requirement error
+            if (response.status === 403) {
+              triggerPremiumWarning();
+            }
+
             setError(errorData.error || 'Failed to start playback');
             return;
           }

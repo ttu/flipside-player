@@ -13,6 +13,7 @@ import { ViewToggle } from './components/ViewToggle';
 import { FlipButton } from './components/FlipButton';
 import { AlbumTrackList } from './components/AlbumTrackList';
 import { PremiumWarning } from './components/PremiumWarning';
+import { UserMenu } from './components/UserMenu';
 import './App.css';
 
 declare global {
@@ -23,7 +24,7 @@ declare global {
 }
 
 function App() {
-  const { isAuthenticated, loading, checkAuth, user } = useAuthStore();
+  const { isAuthenticated, loading, checkAuth } = useAuthStore();
   const { view } = useUIStore();
 
   // Initialize auth check
@@ -79,14 +80,7 @@ function App() {
 
         <div className="header-right">
           <ViewToggle />
-          <div className="user-menu">
-            <img
-              src={user?.images?.[0]?.url || '/default-avatar.png'}
-              alt={user?.display_name || 'User'}
-              className="user-avatar"
-            />
-            <span className="user-name">{user?.display_name}</span>
-          </div>
+          <UserMenu />
         </div>
       </header>
 

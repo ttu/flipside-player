@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '../stores/playerStore';
 import { useUIStore } from '../stores/uiStore';
+import { triggerPremiumWarning } from './PremiumWarning';
 
 interface VinylDeckProps {
   className?: string;
@@ -272,9 +273,15 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
         body: JSON.stringify({
           uris: currentTracks.map(track => track.uri),
         }),
-      }).catch(error => {
-        console.error('Failed to start side playback:', error);
-      });
+      })
+        .then(response => {
+          if (!response.ok && response.status === 403) {
+            triggerPremiumWarning();
+          }
+        })
+        .catch(error => {
+          console.error('Failed to start side playback:', error);
+        });
     }
   }, [vinyl.activeSide, album.sideATracks, album.sideBTracks]);
 

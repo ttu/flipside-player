@@ -1,9 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+
+const PREMIUM_WARNING_DISMISSED_KEY = 'flipside-premium-warning-dismissed';
+
+// Global state for triggering premium warning on play attempts
+let showPremiumWarningCallback: (() => void) | null = null;
+
+export const triggerPremiumWarning = () => {
+  if (showPremiumWarningCallback) {
+    showPremiumWarningCallback();
+  }
+};
 
 export function PremiumWarning() {
   const { user } = useAuthStore();
   const [isVisible, setIsVisible] = useState(true);
+  const [showDueToPlayAttempt, setShowDueToPlayAttempt] = useState(false);
+
+  // Check localStorage on mount and register callback for play attempts
+  useEffect(() => {
+    try {
+      const dismissed = localStorage.getItem(PREMIUM_WARNING_DISMISSED_KEY);
+      if (dismissed === 'true') {
+        setIsVisible(false);
+      }
+    } catch (error) {
+      console.error('Failed to read premium warning dismissal from localStorage:', error);
+    }
+
+    // Register callback for triggering warning on play attempts
+    showPremiumWarningCallback = () => {
+      if (user && user.product !== 'premium') {
+        setShowDueToPlayAttempt(true);
+        setIsVisible(true);
+      }
+    };
+
+    // Cleanup callback on unmount
+    return () => {
+      showPremiumWarningCallback = null;
+    };
+  }, [user]);
+
+  const handleDismiss = () => {
+    if (showDueToPlayAttempt) {
+      // If shown due to play attempt, just hide for now (don't save to localStorage)
+      setIsVisible(false);
+      setShowDueToPlayAttempt(false);
+    } else {
+      // If shown normally, save dismissal to localStorage
+      try {
+        localStorage.setItem(PREMIUM_WARNING_DISMISSED_KEY, 'true');
+        setIsVisible(false);
+      } catch (error) {
+        console.error('Failed to save premium warning dismissal to localStorage:', error);
+        // Still dismiss the warning for this session even if localStorage fails
+        setIsVisible(false);
+      }
+    }
+  };
 
   if (!user || user.product === 'premium' || !isVisible) {
     return null;
@@ -16,7 +71,7 @@ export function PremiumWarning() {
           <h3>🎵 Spotify Premium Required</h3>
           <button
             className="premium-warning-close"
-            onClick={() => setIsVisible(false)}
+            onClick={handleDismiss}
             aria-label="Close notification"
           >
             ×

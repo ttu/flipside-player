@@ -4,6 +4,7 @@ import { usePlayerStore } from '../stores/playerStore';
 import { getFullAlbum, splitAlbumIntoSides } from '../utils/spotify';
 import { FavoriteAlbum, SpotifyAlbum, SpotifyTrack } from '../types';
 import { StorageSettings, StorageType } from './StorageSettings';
+import { triggerPremiumWarning } from './PremiumWarning';
 
 interface FavoritesViewProps {
   className?: string;
@@ -80,6 +81,12 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
           if (!response.ok) {
             const errorData = await response.json();
             console.error('Playback failed:', errorData);
+
+            // Check if it's a premium requirement error
+            if (response.status === 403) {
+              triggerPremiumWarning();
+            }
+
             return;
           }
         } catch (playError) {

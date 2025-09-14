@@ -26,8 +26,7 @@ export class SpotifyAPI {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.clientId,
-      scope:
-        'streaming user-read-playback-state user-modify-playback-state user-read-email user-read-private',
+      scope: 'streaming user-modify-playback-state user-read-private',
       redirect_uri: this.redirectUri,
       state,
       code_challenge_method: 'S256',
