@@ -57,8 +57,11 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
       const clickY = event.clientY - rect.top - centerY;
       const clickRadius = Math.sqrt(clickX * clickX + clickY * clickY);
 
-      // Check if click is on the center area (for flipping)
-      if (clickRadius < 80) {
+      // Check if click is on the center area (for flipping) - scaled to match album cover size
+      const canvasRadius = Math.min(rect.width, rect.height) / 2 - 20;
+      const coverRadius = canvasRadius * 0.25;
+      if (clickRadius < coverRadius + 10) {
+        // Add small padding around album cover
         flipSide();
         return;
       }
@@ -114,10 +117,11 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
         ctx.stroke();
       }
 
-      // Draw center hole
+      // Draw center hole (scaled to vinyl size)
+      const holeRadius = radius * 0.02; // About 2% of vinyl radius
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, holeRadius, 0, Math.PI * 2);
       ctx.fill();
 
       // Draw needle/progress indicator
@@ -150,26 +154,36 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
         ctx.fill();
       }
 
-      // Album artwork in center if available
+      // Album artwork in center if available (scaled to vinyl size like real vinyl labels)
       const albumCover = album.currentAlbum?.images?.[0]?.url || artwork.coverUrl;
       if (albumCover) {
         const img = new Image();
         img.onload = () => {
+          // Scale album cover based on vinyl size - about 25% of the vinyl radius
+          const coverRadius = radius * 0.25;
           ctx.save();
           ctx.beginPath();
-          ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+          ctx.arc(centerX, centerY, coverRadius, 0, Math.PI * 2);
           ctx.clip();
-          ctx.drawImage(img, centerX - 60, centerY - 60, 120, 120);
+          ctx.drawImage(
+            img,
+            centerX - coverRadius,
+            centerY - coverRadius,
+            coverRadius * 2,
+            coverRadius * 2
+          );
           ctx.restore();
         };
         img.src = albumCover;
       }
 
-      // Add clickable flip indicator in center
+      // Add clickable flip indicator below the album cover (scaled to vinyl size)
+      const coverRadius = radius * 0.25;
+      const fontSize = Math.max(12, radius * 0.03); // Scale font with vinyl size, minimum 12px
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.font = '12px Arial';
+      ctx.font = `${fontSize}px Arial`;
       ctx.textAlign = 'center';
-      ctx.fillText('Click to flip', centerX, centerY + 85);
+      ctx.fillText('Click to flip', centerX, centerY + coverRadius + 20);
 
       // Restore context if we were flipping
       if (vinyl.isFlipping) {
@@ -208,7 +222,7 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
     const resizeCanvas = () => {
       const container = canvas.parentElement;
       if (container) {
-        const size = Math.min(container.clientWidth, container.clientHeight, 500);
+        const size = Math.min(container.clientWidth, container.clientHeight, 2400);
         canvas.width = size;
         canvas.height = size;
 
