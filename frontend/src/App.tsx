@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { useSpotifyPlayer } from './hooks/useSpotifyPlayer';
 import { useKeyboardControls } from './hooks/useKeyboardControls';
@@ -26,6 +26,19 @@ declare global {
 function App() {
   const { isAuthenticated, loading, checkAuth } = useAuthStore();
   const { view } = useUIStore();
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Check for auth error in URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+
+    if (error) {
+      setAuthError(error);
+      // Clean up URL by removing error parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   // Initialize auth check
   useEffect(() => {
@@ -67,7 +80,7 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <LoginScreen />;
+    return <LoginScreen authError={authError} />;
   }
 
   return (

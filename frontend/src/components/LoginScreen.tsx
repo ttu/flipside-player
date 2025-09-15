@@ -1,6 +1,10 @@
 import { useAuthStore } from '../stores/authStore';
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  authError?: string | null;
+}
+
+export function LoginScreen({ authError }: LoginScreenProps) {
   const { login, loading } = useAuthStore();
 
   if (loading) {
@@ -11,11 +15,27 @@ export function LoginScreen() {
     );
   }
 
+  const getErrorMessage = (error: string) => {
+    switch (error) {
+      case 'access_denied':
+        return 'Authorization was cancelled. You need to authorize the app to use FlipSide Player.';
+      default:
+        return `Authentication error: ${error}`;
+    }
+  };
+
   return (
     <div className="login-screen">
       <div className="login-content">
         <h1>FlipSide Player</h1>
         <p>A vinyl-inspired Spotify player</p>
+
+        {authError && (
+          <div className="auth-error">
+            <p className="error-message">{getErrorMessage(authError)}</p>
+          </div>
+        )}
+
         <button onClick={login} className="login-button">
           Connect with Spotify
         </button>

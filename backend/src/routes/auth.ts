@@ -6,7 +6,7 @@ import { getRedisClient } from '../utils/redis';
 import { SessionData } from '../types';
 
 const callbackSchema = z.object({
-  code: z.string(),
+  code: z.string().optional(),
   state: z.string(),
   error: z.string().optional(),
 });
@@ -19,7 +19,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   );
 
   // Start Spotify OAuth flow
-  fastify.get('/auth/spotify/start', async (request, reply) => {
+  fastify.get('/auth/spotify/start', async (_request, reply) => {
     const state = crypto.randomBytes(16).toString('hex');
     const { codeVerifier, codeChallenge } = spotify.generatePKCEChallenge();
 
@@ -40,7 +40,13 @@ export async function authRoutes(fastify: FastifyInstance) {
       fastify.log.info('OAuth callback parsed successfully');
 
       if (error) {
-        throw new Error(`Spotify auth error: ${error}`);
+        fastify.log.info(`Spotify auth error: ${error}`);
+        // Redirect to frontend with error message instead of throwing
+        return reply.redirect(`/?error=${encodeURIComponent(error)}`);
+      }
+
+      if (!code) {
+        throw new Error('Missing authorization code');
       }
 
       fastify.log.info('Getting Redis client and code verifier...');
