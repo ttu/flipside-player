@@ -544,6 +544,48 @@ const useSpotifyAPI = () => {
 };
 ```
 
+## Configuration
+
+### Environment Variables
+
+The frontend uses Vite environment variables for configuration:
+
+```bash
+# API Configuration
+VITE_API_BASE_URL=/api                    # Development (same-origin)
+# VITE_API_BASE_URL=https://backend.com/api  # Production (cross-domain)
+
+# Authentication Configuration
+VITE_AUTH_BASE_URL=/api                   # Development (same-origin)
+# VITE_AUTH_BASE_URL=https://backend.com/api # Production (cross-domain)
+
+# App Configuration
+VITE_APP_NAME="FlipSide Player"
+```
+
+### Deployment Configurations
+
+#### Single-Origin Deployment
+```bash
+VITE_API_BASE_URL=/api
+VITE_AUTH_BASE_URL=/api
+```
+
+#### Cross-Domain Deployment
+```bash
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
+```
+
+### Build-Time Variables
+
+All `VITE_*` variables are embedded at build time and become available via `import.meta.env`:
+
+```typescript
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const AUTH_BASE_URL = import.meta.env.VITE_AUTH_BASE_URL || API_BASE_URL;
+```
+
 ## Accessibility Features
 
 ### Keyboard Navigation

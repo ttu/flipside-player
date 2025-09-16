@@ -72,27 +72,118 @@ tail -f backend_logs.log | grep "session"
 **Solution:**
 
 1. **Update Spotify App Settings**
+
+   **Same-Origin Deployment:**
    - Go to https://developer.spotify.com/dashboard
    - Select your app → Settings
    - Update Redirect URI to: `http://127.0.0.1:3001/api/auth/spotify/callback`
 
+   **Cross-Domain Deployment:**
+   - Update Redirect URI to: `https://your-backend-domain.com/api/auth/spotify/callback`
+   - Note: Must point to backend domain, not frontend
+
 2. **Verify Environment Variables**
 
    ```bash
-   # Check backend .env file
+   # Same-origin setup
    grep SPOTIFY_REDIRECT_URI backend/.env
    # Should show: SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/api/auth/spotify/callback
+
+   # Cross-domain setup
+   grep SPOTIFY_REDIRECT_URI backend/.env
+   # Should show: SPOTIFY_REDIRECT_URI=https://your-backend-domain.com/api/auth/spotify/callback
    ```
 
 3. **Check for Temporary Fallback Routes**
    - Ensure no old fallback routes exist in server.ts
    - Restart backend server after changes
 
+### Issue: OAuth callback redirects to wrong domain
+
+**Symptoms:**
+
+- Callback succeeds but redirects to backend domain instead of frontend
+- User sees backend response instead of frontend app
+- CORS errors after successful authentication
+
+**Solution:**
+
+1. **Verify Frontend URL Environment Variable**
+
+   ```bash
+   # Backend environment should specify frontend domain
+   echo $FRONTEND_URL
+   # Same-origin: http://localhost:3001 (or empty)
+   # Cross-domain: https://your-frontend-domain.com
+   ```
+
+2. **Check Auth Route Configuration**
+
+   ```typescript
+   // In auth route callback handler
+   const frontendUrl = process.env.FRONTEND_URL || '/';
+   return reply.redirect(frontendUrl);
+   ```
+
+3. **Validate Redirect Logic**
+   - Backend should redirect to frontend domain after successful auth
+   - Frontend should handle the redirect and check authentication state
+
 ---
 
 ## CORS and Network Issues
 
-### Issue: CORS errors in browser console
+### Issue: CORS errors in cross-domain deployment
+
+**Symptoms:**
+
+- `Access to fetch at 'https://backend.com/api/...' from origin 'https://frontend.com' has been blocked by CORS policy`
+- `Credential is not supported if the CORS header 'Access-Control-Allow-Origin' is '*'`
+- Authentication cookies not being sent with requests
+
+**Root Cause:**
+Frontend and backend deployed on different domains without proper CORS configuration
+
+**Solution:**
+
+1. **Verify CORS Headers**
+
+   ```bash
+   # Test CORS headers with curl
+   curl -H "Origin: https://your-frontend-domain.com" \
+        -H "Access-Control-Request-Method: GET" \
+        -H "Access-Control-Request-Headers: Content-Type" \
+        -X OPTIONS \
+        https://your-backend-domain.com/api/me
+
+   # Should return:
+   # Access-Control-Allow-Origin: https://your-frontend-domain.com
+   # Access-Control-Allow-Credentials: true
+   ```
+
+2. **Check Environment Variables**
+
+   ```bash
+   # Backend environment
+   echo $FRONTEND_URL  # Should match your frontend domain exactly
+   echo $NODE_ENV      # Should be 'production' for cross-domain
+
+   # Frontend environment
+   echo $VITE_API_BASE_URL   # Should be full backend URL
+   echo $VITE_AUTH_BASE_URL  # Should be full backend URL
+   ```
+
+3. **Validate Session Configuration**
+
+   ```typescript
+   // Check session options in backend
+   // Should include for cross-domain:
+   sameSite: 'none',
+   secure: true,  // Required for cross-domain cookies
+   httpOnly: false
+   ```
+
+### Issue: CORS errors in same-origin deployment
 
 **Symptoms:**
 
@@ -126,6 +217,54 @@ Different origins (localhost vs 127.0.0.1) treated as separate domains by browse
    - Backend should serve frontend static files
    - API routes should use `/api` prefix
    - No separate Vite dev server running
+
+### Issue: Authentication cookies not working in cross-domain
+
+**Symptoms:**
+
+- Login appears successful but `/api/me` returns 401
+- Cookies visible in DevTools but not sent with requests
+- "SameSite" warnings in browser console
+
+**Diagnostic Steps:**
+
+```bash
+# 1. Check cookie attributes in browser DevTools
+# Application → Cookies → Look for sessionId cookie
+# Should show: SameSite=None; Secure=true for cross-domain
+
+# 2. Verify HTTPS configuration
+# Cross-domain cookies require HTTPS in production
+
+# 3. Test authentication endpoint
+curl -X GET https://your-backend.com/api/me \
+     -H "Cookie: sessionId=your-session-id" \
+     -H "Origin: https://your-frontend.com"
+```
+
+**Solutions:**
+
+1. **Enable Secure Cookies**
+
+   ```bash
+   # Ensure HTTPS is properly configured
+   # Backend must use secure: true for cross-domain cookies
+   ```
+
+2. **Update Session Configuration**
+
+   ```typescript
+   // In backend session config
+   secure: process.env.NODE_ENV === 'production',
+   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+   ```
+
+3. **Check Domain Configuration**
+
+   ```bash
+   # Verify domains match exactly (including subdomains)
+   # No trailing slashes in FRONTEND_URL
+   ```
 
 ### Issue: "Failed to fetch" errors for API calls
 
@@ -396,6 +535,56 @@ cd frontend && npx vite build
    docker run -e SPOTIFY_CLIENT_ID=... -e SPOTIFY_CLIENT_SECRET=...
    ```
 
+### Issue: Cross-domain deployment configuration errors
+
+**Symptoms:**
+
+- Authentication works in development but fails in production
+- CORS errors only appear in production environment
+- Cookies not being sent between frontend and backend
+
+**Diagnostic Steps:**
+
+```bash
+# 1. Verify deployment-specific environment variables
+echo $NODE_ENV          # Must be 'production' for cross-domain
+echo $FRONTEND_URL      # Must match frontend domain exactly
+echo $SPOTIFY_REDIRECT_URI  # Must point to backend domain
+
+# 2. Test CORS configuration
+curl -H "Origin: https://your-frontend.com" \
+     -H "Access-Control-Request-Method: GET" \
+     -X OPTIONS \
+     https://your-backend.com/api/me
+
+# 3. Check SSL/HTTPS configuration
+curl -I https://your-backend.com/api/health
+```
+
+**Solutions:**
+
+1. **Same-Origin Deployment (Docker Compose)**
+
+   ```bash
+   # Use reverse proxy setup
+   # Backend serves frontend static files
+   VITE_API_BASE_URL=/api
+   FRONTEND_URL=http://localhost:3001  # or empty
+   ```
+
+2. **Cross-Domain Deployment (Render, Vercel, etc.)**
+
+   ```bash
+   # Backend environment
+   NODE_ENV=production
+   FRONTEND_URL=https://your-frontend-domain.com
+   SPOTIFY_REDIRECT_URI=https://your-backend-domain.com/api/auth/spotify/callback
+
+   # Frontend environment
+   VITE_API_BASE_URL=https://your-backend-domain.com/api
+   VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
+   ```
+
 ### Issue: HTTPS redirect loops
 
 **Symptoms:**
@@ -416,6 +605,39 @@ cd frontend && npx vite build
 2. **Update Spotify OAuth URLs**
    - Change redirect URI to HTTPS in Spotify app settings
    - Update environment variables accordingly
+
+### Issue: Session cookies not working in production
+
+**Symptoms:**
+
+- Authentication appears successful but session is lost
+- Browser shows "SameSite" warnings in production
+- API calls return 401 despite recent login
+
+**Solutions:**
+
+1. **Cross-Domain Cookie Configuration**
+
+   ```typescript
+   // Ensure production session config includes:
+   secure: true,        // Required for HTTPS
+   sameSite: 'none',    // Required for cross-domain
+   httpOnly: false      // Allows frontend access if needed
+   ```
+
+2. **Verify HTTPS Setup**
+
+   ```bash
+   # Ensure both domains use HTTPS in production
+   # HTTP cookies won't work for cross-domain
+   ```
+
+3. **Check Domain Configuration**
+
+   ```bash
+   # Ensure FRONTEND_URL matches exactly (no trailing slash)
+   # Subdomains matter: www.example.com != example.com
+   ```
 
 ---
 

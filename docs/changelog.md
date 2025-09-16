@@ -6,6 +6,76 @@ This document tracks all significant changes, improvements, and fixes made to Fl
 
 ---
 
+## 2025-01-17 - Cross-Domain Deployment Support 🌐
+
+### Major Features Added
+
+- **ADDED**: Full CORS support for cross-domain deployment (separate frontend/backend services)
+- **ADDED**: Environment-aware session configuration (secure/sameSite handling)
+- **ADDED**: Cross-domain authentication flow with proper cookie handling
+- **ADDED**: Dual deployment architecture support (same-origin and cross-domain)
+- **ENHANCED**: Device discovery with fallback handling for better user experience
+
+### Deployment Patterns
+
+**Same-Origin Deployment (Docker Compose):**
+- Backend serves frontend static files via reverse proxy
+- All requests appear from single origin
+- Traditional session cookies work seamlessly
+
+**Cross-Domain Deployment (Render, Vercel, Railway):**
+- Frontend and backend on separate domains/services
+- CORS headers enable cross-domain requests
+- Secure cookies with SameSite=none for cross-domain authentication
+
+### Technical Implementation
+
+- **ADDED**: CORS middleware with origin-specific headers
+- **ADDED**: Security headers for production deployment
+- **ENHANCED**: Session configuration for cross-domain cookie support
+- **ADDED**: Environment-based URL configuration (FRONTEND_URL, AUTH_BASE_URL)
+- **FIXED**: OAuth callback to redirect to correct frontend domain
+- **IMPROVED**: Device initialization with Web SDK fallback logic
+
+### Environment Variables Added
+
+**Backend:**
+- `FRONTEND_URL` - Frontend domain for OAuth redirects and CORS
+- Enhanced `NODE_ENV` handling for production cross-domain mode
+
+**Frontend:**
+- `VITE_AUTH_BASE_URL` - Separate auth URL for cross-domain deployments
+- Enhanced `VITE_API_BASE_URL` handling for full URLs
+
+### Files Modified
+
+- `backend/src/server.ts` - Added CORS and security headers middleware
+- `backend/src/routes/auth.ts` - OAuth callback redirect to frontend domain
+- `backend/src/utils/spotify.ts` - Added user-read-playback-state scope
+- `frontend/src/stores/authStore.ts` - Separated API and auth URLs
+- `frontend/src/components/AlbumTrackList.tsx` - Device fallback handling
+- `frontend/src/components/DevicePicker.tsx` - Enhanced device initialization
+- `frontend/src/hooks/useSpotifyPlayer.ts` - Improved Web SDK error handling
+- `backend/Dockerfile` - Fixed multi-stage build for production deployment
+- `docker-compose.yml` - Added cross-domain environment variables
+
+### Bug Fixes
+
+- **FIXED**: "No Spotify device found" error with fallback device detection
+- **FIXED**: Missing permissions error by adding required Spotify scopes
+- **FIXED**: Session persistence in cross-domain production environments
+- **FIXED**: Docker build issues with native module compilation (sodium-native)
+- **FIXED**: Chrome security warnings with proper security headers
+
+### Documentation Updates
+
+- **UPDATED**: All documentation files for CORS cross-domain support
+- **ENHANCED**: Setup instructions for both deployment patterns
+- **ADDED**: Comprehensive debugging guide for CORS issues
+- **IMPROVED**: Environment variable documentation with examples
+
+---
+
 ## 2025-01-11 - UI/UX Improvements & Premium Account Handling ✨
 
 ### Major Features Added

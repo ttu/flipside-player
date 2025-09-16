@@ -4,13 +4,62 @@
 
 This document covers the backend API design, authentication flow, service architecture, and implementation details for FlipSide Player's Fastify server.
 
+## Session Management
+
+### Session Cookie Implementation
+
+FlipSide Player uses `@fastify/secure-session` for secure, server-side session management with the following configuration:
+
+**Session Configuration:**
+```typescript
+await fastify.register(secureSession, {
+  key: Buffer.from(sessionSecret, 'utf8').subarray(0, 32), // 32-byte cryptographic key
+  cookieName: 'sessionId',
+  cookie: {
+    secure: isProduction, // HTTPS-only in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    sameSite: isProduction ? 'none' : 'lax', // Cross-domain support in production
+    path: '/',
+  },
+});
+```
+
+**Session Storage & Retrieval:**
+```typescript
+// Store session data (OAuth callback)
+request.session.set('user', {
+  userId: user.id,
+  accessToken: tokens.access_token,
+  refreshToken: tokens.refresh_token,
+  tokenExpires: Date.now() + tokens.expires_in * 1000
+});
+
+// Retrieve session data (API endpoints)
+const sessionData = request.session.get('user');
+if (!sessionData?.userId) {
+  return reply.code(401).send({ error: 'Not authenticated' });
+}
+```
+
+**Cross-Domain Cookie Considerations:**
+- Production uses `sameSite: 'none'` + `secure: true` for cross-domain HTTPS
+- Development uses `sameSite: 'lax'` for same-origin requests
+- `httpOnly: true` prevents JavaScript access (security best practice)
+- Session key must be exactly 32 bytes for proper encryption
+
+**Environment Variables:**
+- `SESSION_SECRET`: Minimum 32 characters for key generation
+- `FRONTEND_URL`: Sets CORS origin for cross-domain cookie support
+
 ## API Overview
 
 ### Base URL & Structure
 
-- **Development**: `http://localhost:3001/api`
-- **Production**: `https://your-domain.com/api`
-- **Route Prefix**: All API routes use `/api` prefix for reverse proxy compatibility
+- **Development**: `http://localhost:5174/api`
+- **Production Single-Origin**: `https://your-domain.com/api`
+- **Production Cross-Domain**: `https://your-backend-domain.com/api`
+- **Route Prefix**: All API routes use `/api` prefix for routing consistency
 
 ### Response Format
 
@@ -69,6 +118,8 @@ Handles OAuth callback and creates user session.
 - `error` (string, optional): OAuth error from Spotify
 
 **Response**: HTTP 302 Redirect to frontend with session cookie
+- **Single-Origin**: Redirects to `/` (same domain)
+- **Cross-Domain**: Redirects to `FRONTEND_URL` environment variable
 
 **Implementation**:
 
@@ -552,7 +603,10 @@ fastify.setErrorHandler((error, request, reply) => {
 # Spotify API Configuration
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/api/auth/spotify/callback
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:5173/api/auth/spotify/callback
+
+# Cross-Domain Configuration
+FRONTEND_URL=http://localhost:5173
 
 # Session Management
 SESSION_SECRET=your_secure_session_secret_key_must_be_at_least_32_characters_long_for_security
@@ -561,7 +615,7 @@ SESSION_SECRET=your_secure_session_secret_key_must_be_at_least_32_characters_lon
 REDIS_URL=redis://localhost:6379
 
 # Server Configuration
-PORT=3001
+PORT=5174
 HOST=0.0.0.0
 LOG_LEVEL=info
 

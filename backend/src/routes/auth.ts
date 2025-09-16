@@ -42,7 +42,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (error) {
         fastify.log.info(`Spotify auth error: ${error}`);
         // Redirect to frontend with error message instead of throwing
-        return reply.redirect(`/?error=${encodeURIComponent(error)}`);
+        const frontendUrl = process.env.FRONTEND_URL || '/';
+        return reply.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
       }
 
       if (!code) {
@@ -77,9 +78,18 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       // Store session data
       (request.session as any).set('user', sessionData);
+      fastify.log.info(`Session data stored for user: ${sessionData.userId}`);
 
-      // Redirect to the frontend (same origin)
-      return reply.redirect('/');
+      // Debug: Check if data was stored immediately
+      const storedData = (request.session as any).get('user');
+      fastify.log.info(`Immediately after storing - retrieved data: ${JSON.stringify(storedData)}`);
+      fastify.log.info(
+        `Response will set cookies: ${JSON.stringify(reply.getHeaders()['set-cookie'])}`
+      );
+
+      // Redirect to the frontend
+      const frontendUrl = process.env.FRONTEND_URL || '/';
+      return reply.redirect(frontendUrl);
     } catch (error: any) {
       fastify.log.error('Authentication failed with error:', error.message);
 
@@ -109,6 +119,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       const sessionData = (request.session as any).get('user') as SessionData;
 
       fastify.log.info(`/me endpoint called for user: ${sessionData?.userId}`);
+      fastify.log.info(`Session data: ${JSON.stringify(sessionData)}`);
+      fastify.log.info(`Request cookies: ${JSON.stringify(request.headers.cookie)}`);
 
       if (!sessionData?.userId) {
         return reply.code(401).send({ error: 'Not authenticated' });

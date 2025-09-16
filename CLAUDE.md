@@ -2,16 +2,16 @@
 
 ## Project Overview
 
-FlipSide Player is a Spotify music player built with React (frontend) and Fastify (backend), featuring session-based authentication and a reverse proxy architecture.
+FlipSide Player is a Spotify music player built with React (frontend) and Fastify (backend), featuring session-based authentication and flexible deployment architectures.
 
 ## Architecture
 
-- **Frontend**: React + TypeScript + Vite (served via reverse proxy)
+- **Frontend**: React + TypeScript + Vite
 - **Backend**: Fastify + TypeScript + Redis sessions
 - **Authentication**: Spotify OAuth 2.0 with PKCE flow
 - **Session Management**: @fastify/secure-session with Redis storage
 - **Development**: Vite proxy for same-origin requests (no CORS)
-- **Production**: Single origin via reverse proxy
+- **Production**: Supports both single-origin (reverse proxy) and cross-domain (CORS) deployments
 
 ## Development Commands
 
@@ -52,6 +52,7 @@ npm run dev        # Serves both frontend and API from localhost:3001
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:5173/api/auth/spotify/callback
+FRONTEND_URL=http://localhost:5173
 SESSION_SECRET=your_secure_session_secret_key_must_be_at_least_32_characters
 REDIS_URL=redis://localhost:6379
 NODE_ENV=development
@@ -62,6 +63,7 @@ PORT=5174
 
 ```
 VITE_API_BASE_URL=/api
+VITE_AUTH_BASE_URL=/api
 VITE_APP_NAME="FlipSide Player"
 ```
 
@@ -69,10 +71,10 @@ VITE_APP_NAME="FlipSide Player"
 
 ### Authentication Flow
 
-1. User clicks login → redirects to `/api/auth/spotify/start`
+1. User clicks login → redirects to backend `/api/auth/spotify/start`
 2. Backend generates PKCE challenge, stores in Redis, redirects to Spotify
-3. Spotify redirects back to `/api/auth/spotify/callback`
-4. Backend exchanges code for tokens, stores session data, redirects to `/`
+3. Spotify redirects back to backend `/api/auth/spotify/callback`
+4. Backend exchanges code for tokens, stores session data, redirects to frontend
 5. Frontend uses session cookies for subsequent API calls
 
 ### Session Management
@@ -80,14 +82,21 @@ VITE_APP_NAME="FlipSide Player"
 - Uses @fastify/secure-session with Redis backend
 - Session data includes: userId, accessToken, refreshToken, tokenExpires
 - Automatic token refresh when tokens expire
-- httpOnly: false for debugging (consider true for production)
+- Supports both same-origin and cross-domain cookie configurations
 
-### Reverse Proxy Setup
+### Deployment Options
 
+#### Option 1: Single Origin (Reverse Proxy)
 - Backend serves frontend static files from `/Users/ttu/src/github/flipside-player/frontend/dist`
 - API routes prefixed with `/api`
-- Frontend uses relative URLs (`/api/...`) to avoid CORS
+- Frontend uses relative URLs (`/api/...`) - no CORS needed
 - Single origin: http://localhost:3001
+
+#### Option 2: Cross-Domain (CORS)
+- Frontend and backend deployed separately
+- Backend includes CORS headers for cross-domain requests
+- Frontend uses absolute URLs to backend domain
+- Session cookies configured for cross-domain sharing
 
 ### API Routes
 
@@ -134,9 +143,42 @@ Use this for testing the production build:
 3. Start backend: `cd backend && npm run dev`
 4. Access app at http://localhost:3001
 
+## Production Deployment
+
+### Cross-Domain Deployment (e.g., Render)
+
+When deploying frontend and backend as separate services:
+
+**Backend Environment Variables:**
+```
+NODE_ENV=production
+SPOTIFY_REDIRECT_URI=https://your-backend-domain.com/api/auth/spotify/callback
+FRONTEND_URL=https://your-frontend-domain.com
+SESSION_SECRET=your_secure_session_secret_key_must_be_at_least_32_characters
+REDIS_URL=your_redis_connection_string
+```
+
+**Frontend Environment Variables:**
+```
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
+```
+
+**Spotify App Settings:**
+- Add redirect URI: `https://your-backend-domain.com/api/auth/spotify/callback`
+
+### Single-Origin Deployment (Docker Compose)
+
+Use the included docker-compose.yml for single-origin deployment with reverse proxy.
+
 ## Common Issues & Solutions
 
-### CORS Errors
+### CORS Errors (Cross-Domain Deployment)
+
+- **Problem**: Frontend making requests to different origins
+- **Solution**: Ensure VITE_API_BASE_URL points to backend domain, verify CORS headers in backend
+
+### CORS Errors (Same-Origin Deployment)
 
 - **Problem**: Frontend making requests to different origins
 - **Solution**: Use reverse proxy setup, ensure VITE_API_BASE_URL=/api
@@ -144,7 +186,10 @@ Use this for testing the production build:
 ### Session Not Persisting
 
 - **Problem**: Sessions not working across requests
-- **Solution**: Ensure Redis is running, check session secret length (≥32 chars)
+- **Solution**:
+  - Ensure Redis is running, check session secret length (≥32 chars)
+  - For cross-domain: Verify FRONTEND_URL is set correctly in backend
+  - Check browser allows cross-domain cookies (sameSite: 'none' with secure: true)
 
 ### OAuth Callback Issues
 
@@ -183,8 +228,9 @@ docker start redis-flipside
 
 - No JWT tokens used - pure session-based authentication
 - Development uses Vite proxy for same-origin requests (no CORS)
-- Production serves frontend build from backend (reverse proxy)
-- Session cookies work seamlessly in both development and production modes
+- Production supports both reverse proxy (single-origin) and CORS (cross-domain) deployments
+- Session cookies work in both same-origin and cross-domain configurations
+- Backend includes security headers and CORS configuration for production deployment
 
 ## Documentation
 

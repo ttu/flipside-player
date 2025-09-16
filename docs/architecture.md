@@ -2,7 +2,7 @@
 
 ## Technology Stack
 
-FlipSide Player is built as a modern, single-page application (SPA) with a clear separation between frontend and backend, connected via a reverse proxy for seamless same-origin communication and session management.
+FlipSide Player is built as a modern, single-page application (SPA) with a clear separation between frontend and backend. It supports both reverse proxy (same-origin) and CORS (cross-domain) deployment architectures for flexible hosting options.
 
 ### Frontend Technologies
 
@@ -46,7 +46,7 @@ FlipSide Player is built as a modern, single-page application (SPA) with a clear
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                               │ HTTP/HTTPS
-                              │ Same Origin (localhost:3001)
+                              │ Same Origin OR Cross-Domain
 ┌─────────────────────────────────────────────────────────────┐
 │                 Fastify Backend Server                     │
 │  ┌─────────────────┐    ┌─────────────────────────────┐   │
@@ -68,9 +68,27 @@ FlipSide Player is built as a modern, single-page application (SPA) with a clear
 
 ## Architectural Patterns
 
-### Reverse Proxy Pattern
+### Deployment Architecture Options
 
-FlipSide Player uses a reverse proxy architecture where the Fastify backend serves both the static frontend files and API endpoints from the same origin.
+FlipSide Player supports two deployment architectures:
+
+#### 1. Reverse Proxy Pattern (Single Origin)
+
+The Fastify backend serves both the static frontend files and API endpoints from the same origin.
+
+**Benefits:**
+- No CORS complexity
+- Simpler session management
+- Single domain deployment
+
+#### 2. Cross-Domain Pattern (CORS)
+
+Frontend and backend are deployed separately on different domains with CORS headers.
+
+**Benefits:**
+- Independent scaling
+- Separate hosting providers
+- CDN optimization for frontend
 
 **Benefits:**
 

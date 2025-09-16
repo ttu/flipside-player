@@ -17,7 +17,13 @@
       "Bash(npm run lint:*)",
       "Bash(npm ls:*)",
       "Bash(npx eslint:*)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npm run docker:prod:*)",
+      "Bash(docker exec:*)",
+      "Bash(node:*)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []

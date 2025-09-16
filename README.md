@@ -45,8 +45,9 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Create a new app
 3. Add redirect URIs (following Spotify's security requirements):
-   - Development: `http://127.0.0.1:3001/auth/spotify/callback`
-   - Production: `https://yourdomain.com/auth/spotify/callback`
+   - Development: `http://127.0.0.1:5173/api/auth/spotify/callback`
+   - Production Single-Origin: `https://yourdomain.com/api/auth/spotify/callback`
+   - Production Cross-Domain: `https://your-backend-domain.com/api/auth/spotify/callback`
 
    **Note**: Spotify requires explicit loopback IPs - `localhost` is not allowed
 
@@ -89,11 +90,11 @@ Edit `backend/.env`:
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/auth/spotify/callback
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:5173/api/auth/spotify/callback
+FRONTEND_URL=http://localhost:5173
 SESSION_SECRET=your_secure_random_session_secret_32_chars_minimum
 REDIS_URL=redis://localhost:6379
-PORT=3001
-FRONTEND_URL=http://localhost:5173
+PORT=5174
 ```
 
 **Important**: The `SESSION_SECRET` must be at least 32 characters long. Generate one with:
@@ -113,7 +114,8 @@ cp .env.example .env
 Edit `frontend/.env`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3001
+VITE_API_BASE_URL=/api
+VITE_AUTH_BASE_URL=/api
 VITE_APP_NAME="FlipSide Player"
 ```
 
@@ -182,7 +184,7 @@ Create production environment files:
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=https://yourdomain.com/auth/spotify/callback
+SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/auth/spotify/callback
 SESSION_SECRET=your_secure_random_session_secret_32_chars_minimum
 REDIS_URL=redis://redis:6379
 PORT=3001
@@ -193,7 +195,8 @@ NODE_ENV=production
 `frontend/.env.production`:
 
 ```env
-VITE_API_BASE_URL=https://yourdomain.com
+VITE_API_BASE_URL=/api
+VITE_AUTH_BASE_URL=/api
 VITE_APP_NAME="FlipSide Player"
 ```
 
@@ -202,6 +205,36 @@ VITE_APP_NAME="FlipSide Player"
 - **Redis**: Session storage and caching on port 6379
 - **Backend**: API server on port 3001
 - **Frontend**: React app on port 5173 (dev) or served via reverse proxy (prod)
+
+## Deployment
+
+### Cross-Domain Deployment (e.g., Render, Vercel + Railway)
+
+For separate frontend and backend services on different domains:
+
+**Backend Environment Variables:**
+```env
+NODE_ENV=production
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_REDIRECT_URI=https://your-backend-domain.com/api/auth/spotify/callback
+FRONTEND_URL=https://your-frontend-domain.com
+SESSION_SECRET=your_secure_session_secret_32_chars_minimum
+REDIS_URL=your_redis_connection_string
+```
+
+**Frontend Environment Variables:**
+```env
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
+```
+
+**Spotify App Settings:**
+- Add redirect URI: `https://your-backend-domain.com/api/auth/spotify/callback`
+
+### Single-Domain Deployment (Docker Compose)
+
+Use the included docker-compose.yml for single-origin deployment with reverse proxy.
 
 ## Usage
 

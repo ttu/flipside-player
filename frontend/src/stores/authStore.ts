@@ -10,6 +10,7 @@ interface AuthStore extends AuthState {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const AUTH_BASE_URL = import.meta.env.VITE_AUTH_BASE_URL || API_BASE_URL;
 
 export const useAuthStore = create<AuthStore>((set, _get) => ({
   isAuthenticated: false,
@@ -17,7 +18,7 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
   loading: true,
 
   login: () => {
-    window.location.href = '/api/auth/spotify/start';
+    window.location.href = `${AUTH_BASE_URL}/auth/spotify/start`;
   },
 
   logout: async () => {

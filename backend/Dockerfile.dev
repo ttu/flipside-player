@@ -1,18 +1,32 @@
 FROM node:18-alpine
 
+# Install curl for health checks
+RUN apk --no-cache add curl
+
 WORKDIR /app
 
-# Copy package files
+# Copy workspace package files
 COPY package*.json ./
+COPY package-lock.json ./
 
-# Install dependencies
-RUN npm ci
+# Copy backend package.json
+COPY ./backend/package*.json ./backend/
+
+# Install workspace dependencies
+RUN npm ci --workspace=backend
 
 # Copy source code
-COPY . .
+COPY ./backend ./backend
+
+# Set working directory to backend
+WORKDIR /app/backend
 
 # Expose port
 EXPOSE 3001
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3001/api/health || exit 1
 
 # Start development server
 CMD ["npm", "run", "dev"]

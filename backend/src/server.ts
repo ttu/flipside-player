@@ -50,12 +50,15 @@ async function start() {
     }
 
     // Register static file serving for frontend
-    const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+    // Skip in Docker (both dev and prod) since frontend is served separately
+    if (!process.env.DOCKER_DEV && process.env.NODE_ENV !== 'production') {
+      const frontendDistPath = path.join(__dirname, '../../frontend/dist');
 
-    await fastify.register(fastifyStatic, {
-      root: frontendDistPath,
-      prefix: '/',
-    });
+      await fastify.register(fastifyStatic, {
+        root: frontendDistPath,
+        prefix: '/',
+      });
+    }
 
     // Generate a secure session secret if none provided
     const sessionSecret =
@@ -66,14 +69,43 @@ async function start() {
       throw new Error('SESSION_SECRET must be at least 32 characters long for security');
     }
 
+    // Add security headers and CORS
+    fastify.addHook('onSend', async (request, reply) => {
+      reply.header('X-Content-Type-Options', 'nosniff');
+      reply.header('X-Frame-Options', 'DENY');
+      reply.header('X-XSS-Protection', '1; mode=block');
+      reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+      // CORS headers for cross-domain requests
+      const frontendOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+      reply.header('Access-Control-Allow-Origin', frontendOrigin);
+      reply.header('Vary', 'Origin'); // important for caches/CDNs
+      reply.header('Access-Control-Allow-Credentials', 'true');
+      reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      reply.header('Access-Control-Max-Age', '600'); // cache preflight 10 min
+
+      // Only add HSTS in production with HTTPS
+      if (process.env.NODE_ENV === 'production') {
+        reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      }
+    });
+
+    // Handle preflight requests
+    fastify.options('*', async (_request, reply) => {
+      return reply.send();
+    });
+
+    const isProduction = process.env.NODE_ENV === 'production';
+
     await fastify.register(secureSession, {
-      key: Buffer.from(sessionSecret.slice(0, 32)), // Use first 32 chars as key
+      key: Buffer.from(sessionSecret, 'utf8').subarray(0, 32), // Proper Buffer conversion
       cookieName: 'sessionId',
       cookie: {
-        secure: false, // False for localhost development
-        httpOnly: false, // Allow JavaScript access for debugging
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        sameSite: 'lax', // Less restrictive than strict
+        secure: isProduction, // Use secure cookies in production
+        httpOnly: true, // Use httpOnly for better security
+        maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+        sameSite: isProduction ? 'none' : 'lax', // Use 'none' for production cross-domain, 'lax' for dev
         path: '/',
       },
     });
@@ -88,9 +120,7 @@ async function start() {
       return reply.send({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const defaultPort = isDevelopment ? '5174' : '3001';
-    const port = parseInt(process.env.PORT || defaultPort, 10);
+    const port = parseInt(process.env.PORT || '3001', 10);
     const host = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
 
     await fastify.listen({ port, host });

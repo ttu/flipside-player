@@ -7,8 +7,8 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0', // Listen on all interfaces including 127.0.0.1
     proxy: {
-      '/api': 'http://localhost:5174',
-      '/auth': 'http://localhost:5174',
+      '/api': process.env.DOCKER_DEV ? 'http://backend:3001' : 'http://localhost:5174',
+      '/auth': process.env.DOCKER_DEV ? 'http://backend:3001' : 'http://localhost:5174',
     },
   },
   define: {
