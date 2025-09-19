@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useUIStore } from '../stores/uiStore';
 import { usePlayerStore } from '../stores/playerStore';
 import { getDevices, transferPlayback } from '../utils/spotify';
@@ -12,6 +13,8 @@ export function DevicePicker({ className = '' }: DevicePickerProps) {
   const { deviceId: currentDeviceId } = usePlayerStore();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -42,18 +45,40 @@ export function DevicePicker({ className = '' }: DevicePickerProps) {
     [fetchDevices]
   );
 
+  const updateDropdownPosition = useCallback(() => {
+    if (buttonRef.current && isOpen) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        bottom: window.innerHeight - rect.top + 8, // Position above the button with gap
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       fetchDevices();
+      updateDropdownPosition();
+
+      // Listen for resize events to reposition dropdown
+      window.addEventListener('resize', updateDropdownPosition);
+
+      return () => {
+        window.removeEventListener('resize', updateDropdownPosition);
+      };
     }
-  }, [isOpen, fetchDevices]);
+  }, [isOpen, fetchDevices, updateDropdownPosition]);
+
+  // Dropdown is rendered via portal to body; no extra container needed
 
   const activeDevice =
     devices.devices.find(d => d.is_active) || devices.devices.find(d => d.id === currentDeviceId);
 
   return (
-    <div className={`device-picker ${className}`}>
+    <div className={`device-picker ${isOpen ? 'open' : ''} ${className}`}>
       <button
+        ref={buttonRef}
         className="device-picker-toggle"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Select playback device"
@@ -63,45 +88,48 @@ export function DevicePicker({ className = '' }: DevicePickerProps) {
         <span className={`dropdown-arrow ${isOpen ? 'open' : ''}`}>▼</span>
       </button>
 
-      {isOpen && (
-        <div className="device-dropdown">
-          {error && <div className="device-error">{error}</div>}
+      {isOpen
+        ? createPortal(
+            <div className="device-dropdown" style={dropdownStyle}>
+              {error && <div className="device-error">{error}</div>}
 
-          {devices.loading ? (
-            <div className="device-loading">Loading devices...</div>
-          ) : devices.devices.length > 0 ? (
-            <ul className="device-list">
-              {devices.devices.map(device => (
-                <li
-                  key={device.id}
-                  className={`device-item ${device.is_active || device.id === currentDeviceId ? 'active' : ''}`}
-                  onClick={() => handleDeviceSelect(device.id)}
-                >
-                  <div className="device-info">
-                    <span className="device-type-icon">
-                      {device.type === 'Computer'
-                        ? '💻'
-                        : device.type === 'Smartphone'
-                          ? '📱'
-                          : device.type === 'Speaker'
-                            ? '🔊'
-                            : '🎵'}
-                    </span>
-                    <span className="device-name">{device.name}</span>
-                    {(device.is_active || device.id === currentDeviceId) && (
-                      <span className="active-indicator">●</span>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="no-devices">
-              No devices found. Make sure Spotify is open on another device.
-            </div>
-          )}
-        </div>
-      )}
+              {devices.loading ? (
+                <div className="device-loading">Loading devices...</div>
+              ) : devices.devices.length > 0 ? (
+                <ul className="device-list">
+                  {devices.devices.map(device => (
+                    <li
+                      key={device.id}
+                      className={`device-item ${device.is_active || device.id === currentDeviceId ? 'active' : ''}`}
+                      onClick={() => handleDeviceSelect(device.id)}
+                    >
+                      <div className="device-info">
+                        <span className="device-type-icon">
+                          {device.type === 'Computer'
+                            ? '💻'
+                            : device.type === 'Smartphone'
+                              ? '📱'
+                              : device.type === 'Speaker'
+                                ? '🔊'
+                                : '🎵'}
+                        </span>
+                        <span className="device-name">{device.name}</span>
+                        {(device.is_active || device.id === currentDeviceId) && (
+                          <span className="active-indicator">●</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="no-devices">
+                  No devices found. Make sure Spotify is open on another device.
+                </div>
+              )}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

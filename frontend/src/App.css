@@ -1975,6 +1975,11 @@ body {
   position: relative;
 }
 
+.device-picker.open {
+  z-index: 99998 !important;
+  position: relative;
+}
+
 .device-picker-toggle {
   display: flex;
   align-items: center;
@@ -2015,18 +2020,19 @@ body {
 }
 
 .device-dropdown {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  margin-bottom: 0.5rem;
-  background: rgba(0, 0, 0, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: fixed !important;
+  background: rgb(25, 25, 25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
-  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  opacity: 1 !important;
   max-height: 250px;
   overflow-y: auto;
-  z-index: var(--z-search-results);
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+  min-width: 200px;
+  transform: none !important;
+  isolation: isolate;
 }
 
 .device-error,
@@ -2041,12 +2047,18 @@ body {
 .device-list {
   list-style: none;
   padding: 0.5rem 0;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 2;
 }
 
 .device-item {
   padding: 0.75rem 1rem;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: background-color 0.2s;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
 }
 
 .device-item:hover {

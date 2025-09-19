@@ -48,8 +48,9 @@ export function LoginScreen({ authError }: LoginScreenProps) {
               <strong>Spotify permissions requested:</strong>
             </p>
             <ul>
-              <li>Music streaming (to play songs)</li>
-              <li>Playback control (to start/stop/skip tracks)</li>
+              <li>Music streaming (to play songs on any of your devices)</li>
+              <li>Playback control (to start/stop/skip tracks on your devices)</li>
+              <li>Playback state (to see available devices and current playback)</li>
               <li>Basic profile (user ID, name, avatar for display)</li>
             </ul>
             <p>
@@ -59,7 +60,7 @@ export function LoginScreen({ authError }: LoginScreenProps) {
               <li>No email address</li>
               <li>No listening history or playlists</li>
               <li>No followers or social data</li>
-              <li>No current playback state</li>
+              <li>No personal data beyond basic profile</li>
             </ul>
             <p className="privacy-summary">
               FlipSide Player uses minimal Spotify permissions - just enough to play music and

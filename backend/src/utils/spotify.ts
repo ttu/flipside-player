@@ -26,7 +26,7 @@ export class SpotifyAPI {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.clientId,
-      scope: 'streaming user-modify-playback-state user-read-private',
+      scope: 'streaming user-modify-playback-state user-read-playback-state user-read-private',
       redirect_uri: this.redirectUri,
       state,
       code_challenge_method: 'S256',
@@ -140,7 +140,12 @@ export class SpotifyAPI {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get devices');
+      const errorText = await response.text();
+      console.error(
+        `Spotify devices API error: ${response.status} ${response.statusText}`,
+        errorText
+      );
+      throw new Error(`Failed to get devices: ${response.status} ${response.statusText}`);
     }
 
     return response.json() as Promise<{ devices: SpotifyDevice[] }>;
