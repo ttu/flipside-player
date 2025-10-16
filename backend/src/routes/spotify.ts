@@ -20,6 +20,15 @@ const playSchema = z.object({
   uris: z.array(z.string()).optional(),
 });
 
+const pauseSchema = z.object({
+  deviceId: z.string().optional(),
+});
+
+const volumeSchema = z.object({
+  deviceId: z.string().optional(),
+  volume: z.number().min(0).max(100),
+});
+
 export async function spotifyRoutes(fastify: FastifyInstance) {
   const spotify = new SpotifyAPI(
     process.env.SPOTIFY_CLIENT_ID!,
@@ -189,6 +198,77 @@ export async function spotifyRoutes(fastify: FastifyInstance) {
         error: 'Failed to start playback',
         details: error.message.includes('HTTP') ? error.message : undefined,
       });
+    }
+  });
+
+  // Pause playback
+  fastify.put('/spotify/pause', async (request, reply) => {
+    try {
+      const { deviceId } = pauseSchema.parse(request.body || {});
+      const accessToken = await getValidAccessToken(request);
+
+      await spotify.pausePlayback(accessToken, deviceId);
+
+      return reply.send({ success: true });
+    } catch (error: any) {
+      fastify.log.error(error);
+
+      if (error.message === 'Not authenticated') {
+        return reply.code(401).send({ error: 'Not authenticated' });
+      }
+
+      return reply.code(500).send({ error: 'Failed to pause playback' });
+    }
+  });
+
+  // Playback state
+  fastify.get('/spotify/state', async (request, reply) => {
+    try {
+      const accessToken = await getValidAccessToken(request);
+      const state = await spotify.getPlaybackState(accessToken);
+      return reply.send(state);
+    } catch (error: any) {
+      fastify.log.error(error);
+      if (error.message === 'Not authenticated') {
+        return reply.code(401).send({ error: 'Not authenticated' });
+      }
+      return reply.code(500).send({ error: 'Failed to get playback state' });
+    }
+  });
+
+  // Next/Previous controls
+  fastify.post('/spotify/next', async (request, reply) => {
+    try {
+      const accessToken = await getValidAccessToken(request);
+      await spotify.nextTrack(accessToken);
+      return reply.send({ success: true });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to skip to next' });
+    }
+  });
+
+  fastify.post('/spotify/previous', async (request, reply) => {
+    try {
+      const accessToken = await getValidAccessToken(request);
+      await spotify.previousTrack(accessToken);
+      return reply.send({ success: true });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to skip to previous' });
+    }
+  });
+
+  // Volume control
+  fastify.put('/spotify/volume', async (request, reply) => {
+    try {
+      const { deviceId, volume } = volumeSchema.parse(request.body);
+      const accessToken = await getValidAccessToken(request);
+      await spotify.setVolume(accessToken, volume, deviceId);
+      return reply.send({ success: true });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to set volume' });
     }
   });
 }

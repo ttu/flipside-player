@@ -11,6 +11,7 @@ This document covers the backend API design, authentication flow, service archit
 FlipSide Player uses `@fastify/secure-session` for secure, server-side session management with the following configuration:
 
 **Session Configuration:**
+
 ```typescript
 await fastify.register(secureSession, {
   key: Buffer.from(sessionSecret, 'utf8').subarray(0, 32), // 32-byte cryptographic key
@@ -26,13 +27,14 @@ await fastify.register(secureSession, {
 ```
 
 **Session Storage & Retrieval:**
+
 ```typescript
 // Store session data (OAuth callback)
 request.session.set('user', {
   userId: user.id,
   accessToken: tokens.access_token,
   refreshToken: tokens.refresh_token,
-  tokenExpires: Date.now() + tokens.expires_in * 1000
+  tokenExpires: Date.now() + tokens.expires_in * 1000,
 });
 
 // Retrieve session data (API endpoints)
@@ -43,12 +45,14 @@ if (!sessionData?.userId) {
 ```
 
 **Cross-Domain Cookie Considerations:**
+
 - Production uses `sameSite: 'none'` + `secure: true` for cross-domain HTTPS
 - Development uses `sameSite: 'lax'` for same-origin requests
 - `httpOnly: true` prevents JavaScript access (security best practice)
 - Session key must be exactly 32 bytes for proper encryption
 
 **Environment Variables:**
+
 - `SESSION_SECRET`: Minimum 32 characters for key generation
 - `FRONTEND_URL`: Sets CORS origin for cross-domain cookie support
 
@@ -118,6 +122,7 @@ Handles OAuth callback and creates user session.
 - `error` (string, optional): OAuth error from Spotify
 
 **Response**: HTTP 302 Redirect to frontend with session cookie
+
 - **Single-Origin**: Redirects to `/` (same domain)
 - **Cross-Domain**: Redirects to `FRONTEND_URL` environment variable
 
@@ -416,7 +421,7 @@ export class SpotifyAPI {
       response_type: 'code',
       client_id: this.clientId,
       scope:
-        'streaming user-read-playback-state user-modify-playback-state user-read-email user-read-private',
+        'streaming user-read-playback-position user-modify-playback-state user-read-playback-state user-read-private',
       redirect_uri: this.redirectUri,
       state,
       code_challenge_method: 'S256',

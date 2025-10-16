@@ -1,61 +1,67 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { usePlayerStore } from '../stores/playerStore';
+// API calls are handled inside store actions now
 
 interface PlayerControlsProps {
   className?: string;
 }
 
 export function PlayerControls({ className = '' }: PlayerControlsProps) {
-  const { player, isPlaying, positionMs, durationMs, volume } = usePlayerStore();
+  const {
+    isPlaying,
+    positionMs,
+    durationMs,
+    volume,
+    deviceId,
+    play,
+    pause,
+    next,
+    previous,
+    setVolumeLocal,
+    setVolumeServer,
+  } = usePlayerStore();
+  const volumeDebounceRef = useRef<number | undefined>(undefined);
 
   const handlePlayPause = useCallback(async () => {
-    if (!player) return;
-
     try {
-      if (isPlaying) {
-        await player.pause();
-      } else {
-        await player.resume();
-      }
+      if (isPlaying) await pause();
+      else await play(deviceId);
     } catch (error) {
       console.error('Play/pause failed:', error);
     }
-  }, [player, isPlaying]);
+  }, [isPlaying, deviceId, play, pause]);
 
   const handlePrevious = useCallback(async () => {
-    if (!player) return;
-
     try {
-      await player.previousTrack();
+      await previous();
     } catch (error) {
       console.error('Previous track failed:', error);
     }
-  }, [player]);
+  }, [previous]);
 
   const handleNext = useCallback(async () => {
-    if (!player) return;
-
     try {
-      await player.nextTrack();
+      await next();
     } catch (error) {
       console.error('Next track failed:', error);
     }
-  }, [player]);
+  }, [next]);
 
   const handleVolumeChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!player) return;
-
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const newVolume = parseFloat(e.target.value);
+      // Optimistically update local volume
+      setVolumeLocal(newVolume);
 
-      try {
-        await player.setVolume(newVolume);
-        usePlayerStore.getState().setVolume(newVolume);
-      } catch (error) {
-        console.error('Volume change failed:', error);
+      // Debounce server volume updates to avoid 429 rate limits
+      if (volumeDebounceRef.current) {
+        window.clearTimeout(volumeDebounceRef.current);
       }
+      volumeDebounceRef.current = window.setTimeout(() => {
+        setVolumeServer(newVolume).catch(err => console.error('Volume change failed:', err));
+      }, 250);
     },
-    [player]
+    [setVolumeLocal, setVolumeServer]
   );
 
   const formatTime = (ms: number) => {
@@ -72,7 +78,6 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
         <button
           className="control-button prev-button"
           onClick={handlePrevious}
-          disabled={!player}
           aria-label="Previous track"
         >
           ⏮
@@ -81,18 +86,12 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
         <button
           className="control-button play-pause-button"
           onClick={handlePlayPause}
-          disabled={!player}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? '⏸' : '▶'}
         </button>
 
-        <button
-          className="control-button next-button"
-          onClick={handleNext}
-          disabled={!player}
-          aria-label="Next track"
-        >
+        <button className="control-button next-button" onClick={handleNext} aria-label="Next track">
           ⏭
         </button>
       </div>

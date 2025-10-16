@@ -42,29 +42,30 @@ export function LoginScreen({ authError }: LoginScreenProps) {
         <p className="premium-note">Note: Spotify Premium subscription required for playback</p>
 
         <div className="privacy-notice">
-          <h3>🔒 Minimal Permissions & Privacy</h3>
+          <h3>🔒 Permissions & Privacy</h3>
           <div className="privacy-details">
             <p>
               <strong>Spotify permissions requested:</strong>
             </p>
             <ul>
-              <li>Music streaming (to play songs on any of your devices)</li>
-              <li>Playback control (to start/stop/skip tracks on your devices)</li>
-              <li>Playback state (to see available devices and current playback)</li>
-              <li>Basic profile (user ID, name, avatar for display)</li>
+              <li>Music streaming (play songs in the web player)</li>
+              <li>Playback position (read currently playing position)</li>
+              <li>Playback control (play, pause, skip tracks)</li>
+              <li>Playback state (read current playback state)</li>
+              <li>Private profile (access profile info)</li>
             </ul>
             <p>
               <strong>What we don't access:</strong>
             </p>
             <ul>
-              <li>No email address</li>
-              <li>No listening history or playlists</li>
+              <li>No listening history or saved tracks</li>
+              <li>No playlists modification</li>
               <li>No followers or social data</li>
-              <li>No personal data beyond basic profile</li>
+              <li>No library modification</li>
             </ul>
             <p className="privacy-summary">
-              FlipSide Player uses minimal Spotify permissions - just enough to play music and
-              nothing more. Your privacy is protected.
+              FlipSide Player only requests the permissions needed for playback control and basic
+              user identification.
             </p>
           </div>
         </div>

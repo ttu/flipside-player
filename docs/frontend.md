@@ -566,12 +566,14 @@ VITE_APP_NAME="FlipSide Player"
 ### Deployment Configurations
 
 #### Single-Origin Deployment
+
 ```bash
 VITE_API_BASE_URL=/api
 VITE_AUTH_BASE_URL=/api
 ```
 
 #### Cross-Domain Deployment
+
 ```bash
 VITE_API_BASE_URL=https://your-backend-domain.com/api
 VITE_AUTH_BASE_URL=https://your-backend-domain.com/api

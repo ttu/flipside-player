@@ -26,7 +26,8 @@ export class SpotifyAPI {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.clientId,
-      scope: 'streaming user-modify-playback-state user-read-playback-state user-read-private',
+      scope:
+        'streaming user-read-playback-position user-modify-playback-state user-read-playback-state user-read-private',
       redirect_uri: this.redirectUri,
       state,
       code_challenge_method: 'S256',
@@ -209,6 +210,99 @@ export class SpotifyAPI {
       }
 
       throw new Error(`Failed to start playback: ${errorDetails}`);
+    }
+  }
+
+  async pausePlayback(accessToken: string, deviceId?: string): Promise<void> {
+    const url = new URL(`${SPOTIFY_BASE_URL}/me/player/pause`);
+    if (deviceId) {
+      url.searchParams.set('device_id', deviceId);
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to pause playback: HTTP ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+  }
+
+  async getPlaybackState(accessToken: string): Promise<any> {
+    const response = await fetch(`${SPOTIFY_BASE_URL}/me/player`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to get playback state: HTTP ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+
+    return response.json();
+  }
+
+  async nextTrack(accessToken: string, deviceId?: string): Promise<void> {
+    const url = new URL(`${SPOTIFY_BASE_URL}/me/player/next`);
+    if (deviceId) url.searchParams.set('device_id', deviceId);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to skip to next: HTTP ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+  }
+
+  async previousTrack(accessToken: string, deviceId?: string): Promise<void> {
+    const url = new URL(`${SPOTIFY_BASE_URL}/me/player/previous`);
+    if (deviceId) url.searchParams.set('device_id', deviceId);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to skip to previous: HTTP ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+  }
+
+  async setVolume(accessToken: string, volumePercent: number, deviceId?: string): Promise<void> {
+    const url = new URL(`${SPOTIFY_BASE_URL}/me/player/volume`);
+    url.searchParams.set(
+      'volume_percent',
+      String(Math.max(0, Math.min(100, Math.round(volumePercent))))
+    );
+    if (deviceId) url.searchParams.set('device_id', deviceId);
+
+    const response = await fetch(url.toString(), {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to set volume: HTTP ${response.status} ${response.statusText} - ${errorText}`
+      );
     }
   }
 }

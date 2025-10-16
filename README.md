@@ -53,6 +53,14 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 
 4. Note your Client ID and Client Secret
 
+**Required Spotify Scopes**: The application will request the following permissions during OAuth:
+
+- `streaming` - Play music in the web player
+- `user-read-playback-position` - Read your currently playing position
+- `user-modify-playback-state` - Control playback (play, pause, skip)
+- `user-read-playback-state` - Read your playback state
+- `user-read-private` - Access your private profile info
+
 ### 2. Quick Install
 
 Use the install script to set up everything automatically:
@@ -213,6 +221,7 @@ VITE_APP_NAME="FlipSide Player"
 For separate frontend and backend services on different domains:
 
 **Backend Environment Variables:**
+
 ```env
 NODE_ENV=production
 SPOTIFY_CLIENT_ID=your_spotify_client_id
@@ -224,12 +233,14 @@ REDIS_URL=your_redis_connection_string
 ```
 
 **Frontend Environment Variables:**
+
 ```env
 VITE_API_BASE_URL=https://your-backend-domain.com/api
 VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
 ```
 
 **Spotify App Settings:**
+
 - Add redirect URI: `https://your-backend-domain.com/api/auth/spotify/callback`
 
 ### Single-Domain Deployment (Docker Compose)

@@ -9,7 +9,14 @@ interface AlbumTrackListProps {
 
 export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
   const { album, vinyl, addFavorite, removeFavorite, isFavorite } = useUIStore();
-  const { track: currentTrack } = usePlayerStore();
+  const {
+    track: currentTrack,
+    deviceId,
+    setTrack,
+    setIsPlaying,
+    setPosition,
+    playUris,
+  } = usePlayerStore();
 
   const currentTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
 
@@ -26,25 +33,24 @@ export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
 
   const handleTrackClick = async (track: SpotifyTrack) => {
     try {
+      // Optimistically update UI to reflect the selected track immediately
+      setTrack(track);
+      setIsPlaying(true);
+      setPosition(0);
+
       // Get all tracks from current side and start from clicked track
       const trackIndex = currentTracks.findIndex(t => t.id === track.id);
       const tracksFromHere = currentTracks.slice(trackIndex);
 
-      const response = await fetch('/api/spotify/play', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          uris: tracksFromHere.map(t => t.uri),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Playback failed:', errorData);
-
-        // Check if it's a premium requirement error
-        if (response.status === 403) {
+      try {
+        await playUris(
+          tracksFromHere.map(t => t.uri),
+          deviceId
+        );
+      } catch (e: any) {
+        console.error('Playback failed:', e);
+        // Best-effort premium warning if backend returns 403
+        if (String(e?.message || '').includes('403')) {
           triggerPremiumWarning();
         }
       }
@@ -116,7 +122,6 @@ export function AlbumTrackList({ className = '' }: AlbumTrackListProps) {
               <div className="track-number">{index + 1}</div>
               <div className="track-name">{track.name}</div>
               <div className="track-duration">{formatDuration(track.duration_ms)}</div>
-              {isCurrentTrack(track) && <div className="currently-playing">♪</div>}
             </li>
           ))}
         </ul>

@@ -15,6 +15,13 @@ FlipSide Player is a Spotify music player built with React (frontend) and Fastif
 
 ## Development Commands
 
+### Quick Start
+
+```bash
+# Start the complete application (from project root)
+npm run dev        # Starts both backend and frontend servers
+```
+
 ### Backend
 
 ```bash
@@ -35,13 +42,6 @@ npx vite build     # Build for production (required for reverse proxy)
 npm run lint       # Run ESLint
 npm run type-check # Run TypeScript type checking
 npm run format     # Run Prettier formatting
-```
-
-### Full Application
-
-```bash
-# Start the complete application (from backend directory)
-npm run dev        # Serves both frontend and API from localhost:3001
 ```
 
 ## Environment Variables
@@ -73,9 +73,10 @@ VITE_APP_NAME="FlipSide Player"
 
 1. User clicks login → redirects to backend `/api/auth/spotify/start`
 2. Backend generates PKCE challenge, stores in Redis, redirects to Spotify
-3. Spotify redirects back to backend `/api/auth/spotify/callback`
-4. Backend exchanges code for tokens, stores session data, redirects to frontend
-5. Frontend uses session cookies for subsequent API calls
+3. User grants permissions (scopes: streaming, user-read-playback-position, user-modify-playback-state, user-read-playback-state, user-read-private)
+4. Spotify redirects back to backend `/api/auth/spotify/callback`
+5. Backend exchanges code for tokens, stores session data, redirects to frontend
+6. Frontend uses session cookies for subsequent API calls
 
 ### Session Management
 
@@ -87,12 +88,14 @@ VITE_APP_NAME="FlipSide Player"
 ### Deployment Options
 
 #### Option 1: Single Origin (Reverse Proxy)
+
 - Backend serves frontend static files from `/Users/ttu/src/github/flipside-player/frontend/dist`
 - API routes prefixed with `/api`
 - Frontend uses relative URLs (`/api/...`) - no CORS needed
 - Single origin: http://localhost:3001
 
 #### Option 2: Cross-Domain (CORS)
+
 - Frontend and backend deployed separately
 - Backend includes CORS headers for cross-domain requests
 - Frontend uses absolute URLs to backend domain
@@ -117,7 +120,18 @@ VITE_APP_NAME="FlipSide Player"
 
 ## Development Workflow
 
-### Option 1: Fast Development (Recommended)
+### Quick Start (Recommended)
+
+Start the full application from project root:
+
+1. Ensure Redis is running: `docker start redis-flipside`
+2. Run: `npm run dev` (from project root)
+3. Access app at http://localhost:5173 (Vite dev server)
+4. For login: User must manually enter credentials, then Claude can click "Agree" to authorize
+
+This starts both backend (port 5174) and frontend (port 5173) servers automatically using `concurrently`.
+
+### Option 1: Fast Development (Vite proxy)
 
 Use Vite dev server with proxy for fast hot-reload development:
 
@@ -150,6 +164,7 @@ Use this for testing the production build:
 When deploying frontend and backend as separate services:
 
 **Backend Environment Variables:**
+
 ```
 NODE_ENV=production
 SPOTIFY_REDIRECT_URI=https://your-backend-domain.com/api/auth/spotify/callback
@@ -159,12 +174,14 @@ REDIS_URL=your_redis_connection_string
 ```
 
 **Frontend Environment Variables:**
+
 ```
 VITE_API_BASE_URL=https://your-backend-domain.com/api
 VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
 ```
 
 **Spotify App Settings:**
+
 - Add redirect URI: `https://your-backend-domain.com/api/auth/spotify/callback`
 
 ### Single-Origin Deployment (Docker Compose)
@@ -259,13 +276,29 @@ When making changes, update relevant documentation files to keep them current wi
 **IMPORTANT**: Always run these commands after making code changes:
 
 ```bash
-# After making changes to code:
-npm run format     # Format code with Prettier
-npm run lint:fix   # Fix linting errors automatically
-npm run build      # Verify TypeScript compilation and build
+# After making changes to code (REQUIRED after every change):
+npm run format     # Format code with Prettier (run first)
+npm run lint       # Check for linting errors (run second)
 
-# Full project build verification:
-npm run build      # Build both frontend and backend
+# Optional - for fixing auto-fixable issues:
+npm run lint:fix   # Fix linting errors automatically
+
+# Optional - verify build:
+npm run build      # Verify TypeScript compilation and build
 ```
 
 This ensures code consistency, catches errors early, and maintains build integrity.
+
+**Claude's Workflow**: After every code change, always run `npm run format` then `npm run lint` to ensure code quality.
+
+## Claude's Development Process
+
+When working with this application as Claude Code:
+
+1. **Starting the application**: Always use `npm run dev` from project root (starts both backend and frontend with concurrently)
+2. **Testing with Chrome MCP**:
+   - Use Chrome DevTools MCP server to automate browser interactions
+   - For login flows: ALWAYS prompt user to manually enter credentials (never ask for passwords)
+   - Can automate clicking "Agree" buttons and other UI interactions after user authentication
+   - Take snapshots to verify application state
+3. **Documentation updates**: Update this CLAUDE.md file when discovering new workflows or correcting documentation errors

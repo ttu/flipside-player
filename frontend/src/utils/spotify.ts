@@ -101,6 +101,71 @@ export async function getSpotifyToken(): Promise<string> {
   return response.text();
 }
 
+// Playback control helpers
+export async function pausePlayback() {
+  const res = await fetch(`${API_BASE_URL}/spotify/pause`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) throw new Error('Pause failed');
+}
+
+export async function resumePlayback(deviceId?: string) {
+  const res = await fetch(`${API_BASE_URL}/spotify/play`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(deviceId ? { deviceId } : {}),
+  });
+  if (!res.ok) throw new Error('Play failed');
+}
+
+export async function nextTrack() {
+  const res = await fetch(`${API_BASE_URL}/spotify/next`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Next failed');
+}
+
+export async function previousTrack() {
+  const res = await fetch(`${API_BASE_URL}/spotify/previous`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Previous failed');
+}
+
+export async function setVolumePercent(volume0to1: number) {
+  const res = await fetch(`${API_BASE_URL}/spotify/volume`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ volume: Math.round(volume0to1 * 100) }),
+  });
+  if (!res.ok) throw new Error('Volume failed');
+}
+
+export async function startPlayback(deviceId?: string, uris?: string[]) {
+  const res = await fetch(`${API_BASE_URL}/spotify/play`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId, uris }),
+  });
+  if (!res.ok) throw new Error('Start playback failed');
+}
+
+export async function getPlaybackState() {
+  const res = await fetch(`${API_BASE_URL}/spotify/state`, {
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Get state failed');
+  return res.json();
+}
+
 export function splitAlbumIntoSides(tracks: any[], albumInfo?: any) {
   if (!tracks || tracks.length === 0) {
     return { sideA: [], sideB: [] };

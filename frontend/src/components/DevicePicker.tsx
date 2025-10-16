@@ -10,7 +10,7 @@ interface DevicePickerProps {
 
 export function DevicePicker({ className = '' }: DevicePickerProps) {
   const { devices, setDevices, setDevicesLoading } = useUIStore();
-  const { deviceId: currentDeviceId } = usePlayerStore();
+  const { deviceId: currentDeviceId, setDeviceId } = usePlayerStore();
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -34,6 +34,7 @@ export function DevicePicker({ className = '' }: DevicePickerProps) {
     async (deviceId: string) => {
       try {
         await transferPlayback(deviceId, true);
+        setDeviceId(deviceId);
         setIsOpen(false);
         // Refresh devices to get updated active state
         setTimeout(fetchDevices, 1000);
@@ -42,7 +43,7 @@ export function DevicePicker({ className = '' }: DevicePickerProps) {
         console.error('Failed to transfer playback:', err);
       }
     },
-    [fetchDevices]
+    [fetchDevices, setDeviceId]
   );
 
   const updateDropdownPosition = useCallback(() => {

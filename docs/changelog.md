@@ -19,11 +19,13 @@ This document tracks all significant changes, improvements, and fixes made to Fl
 ### Deployment Patterns
 
 **Same-Origin Deployment (Docker Compose):**
+
 - Backend serves frontend static files via reverse proxy
 - All requests appear from single origin
 - Traditional session cookies work seamlessly
 
 **Cross-Domain Deployment (Render, Vercel, Railway):**
+
 - Frontend and backend on separate domains/services
 - CORS headers enable cross-domain requests
 - Secure cookies with SameSite=none for cross-domain authentication
@@ -40,10 +42,12 @@ This document tracks all significant changes, improvements, and fixes made to Fl
 ### Environment Variables Added
 
 **Backend:**
+
 - `FRONTEND_URL` - Frontend domain for OAuth redirects and CORS
 - Enhanced `NODE_ENV` handling for production cross-domain mode
 
 **Frontend:**
+
 - `VITE_AUTH_BASE_URL` - Separate auth URL for cross-domain deployments
 - Enhanced `VITE_API_BASE_URL` handling for full URLs
 

@@ -738,10 +738,10 @@ body {
   flex: 1;
   display: flex;
   justify-content: flex-start;
-  align-items: center;
+  align-items: stretch;
   padding: 2rem;
-  padding-left: 4rem;
   overflow: hidden;
+  gap: 2rem;
 }
 
 .player-section {
@@ -750,7 +750,7 @@ body {
   align-items: center;
   gap: 2rem;
   height: 100%;
-  width: 100%;
+  flex: 1;
 }
 
 .player-section.favorites {
@@ -1535,13 +1535,16 @@ body {
 
 /* Album Info Section */
 .album-info-section {
-  position: fixed;
-  top: 120px;
-  right: 2rem;
   width: 400px;
   max-height: calc(100vh - 200px);
   overflow-y: auto;
   z-index: var(--z-content);
+  flex-shrink: 0;
+}
+
+.album-info-section.left-side {
+  position: static;
+  order: -1;
 }
 
 /* Album Track List Specific Styles */
@@ -2107,6 +2110,8 @@ body {
 
   .app-main {
     padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   .player-section {
@@ -2117,6 +2122,11 @@ body {
     position: static;
     width: 100%;
     max-height: none;
+    order: 1;
+  }
+
+  .album-info-section.left-side {
+    order: 1;
   }
 
   .player-controls {

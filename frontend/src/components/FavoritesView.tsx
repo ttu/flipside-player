@@ -26,8 +26,16 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
     album,
     storageType,
     setStorageType,
+    setActiveSide,
   } = useUIStore();
-  const { player } = usePlayerStore();
+  const {
+    deviceId,
+    setTrack,
+    setIsPlaying,
+    setPosition,
+    track: currentTrack,
+    playUris,
+  } = usePlayerStore();
   const [expandedAlbum, setExpandedAlbum] = useState<ExpandedAlbumData | null>(null);
   const [loadingExpand, setLoadingExpand] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -65,32 +73,27 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
       // Update stores
       setCurrentAlbum(expandedAlbum.album);
       setAlbumTracks(expandedAlbum.sideA, expandedAlbum.sideB);
+      setActiveSide(side);
+
+      // Optimistically mark first track as current and playing
+      if (tracks.length > 0) {
+        setTrack(tracks[0]);
+        setIsPlaying(true);
+        setPosition(0);
+      }
 
       // Start playback of the selected side
-      if (tracks.length > 0 && player && tracks[0]?.uri) {
+      if (tracks.length > 0 && tracks[0]?.uri) {
         try {
-          const response = await fetch('/api/spotify/play', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              uris: tracks.map(track => track.uri),
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Playback failed:', errorData);
-
-            // Check if it's a premium requirement error
-            if (response.status === 403) {
-              triggerPremiumWarning();
-            }
-
-            return;
-          }
-        } catch (playError) {
+          await playUris(
+            tracks.map(t => t.uri),
+            deviceId
+          );
+        } catch (playError: any) {
           console.error('Failed to start playback:', playError);
+          if (String(playError?.message || '').includes('403')) {
+            triggerPremiumWarning();
+          }
           return;
         }
       }
@@ -171,7 +174,10 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
               </div>
               <div className="track-list">
                 {expandedAlbum.sideA.map((track, index) => (
-                  <div key={track.id} className="track-item">
+                  <div
+                    key={track.id}
+                    className={`track-item ${currentTrack?.id === track.id ? 'current' : ''}`}
+                  >
                     <span className="track-number">{index + 1}</span>
                     <span className="track-name">{track.name}</span>
                     <span className="track-duration">{formatDuration(track.duration_ms)}</span>
@@ -198,7 +204,10 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
               </div>
               <div className="track-list">
                 {expandedAlbum.sideB.map((track, index) => (
-                  <div key={track.id} className="track-item">
+                  <div
+                    key={track.id}
+                    className={`track-item ${currentTrack?.id === track.id ? 'current' : ''}`}
+                  >
                     <span className="track-number">{index + 1}</span>
                     <span className="track-name">{track.name}</span>
                     <span className="track-duration">{formatDuration(track.duration_ms)}</span>

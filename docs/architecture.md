@@ -77,6 +77,7 @@ FlipSide Player supports two deployment architectures:
 The Fastify backend serves both the static frontend files and API endpoints from the same origin.
 
 **Benefits:**
+
 - No CORS complexity
 - Simpler session management
 - Single domain deployment
@@ -86,6 +87,7 @@ The Fastify backend serves both the static frontend files and API endpoints from
 Frontend and backend are deployed separately on different domains with CORS headers.
 
 **Benefits:**
+
 - Independent scaling
 - Separate hosting providers
 - CDN optimization for frontend
@@ -191,13 +193,21 @@ flipside-player/
 3. **Backend generates PKCE** - Creates code_verifier, code_challenge, and state
 4. **Backend returns auth URL** - Spotify authorization URL with PKCE parameters
 5. **User redirected to Spotify** - Browser navigates to Spotify's authorization page
-6. **User authorizes application** - Grants requested permissions
+6. **User authorizes application** - Grants requested permissions (see scopes below)
 7. **Spotify redirects to callback** - `GET /api/auth/spotify/callback?code=...&state=...`
 8. **Backend exchanges authorization code** - Uses PKCE verifier to get tokens
 9. **Spotify returns tokens** - Access token, refresh token, and expiration info
 10. **Backend creates session** - Stores tokens and user info in Redis with session ID
 11. **User redirected to frontend** - With secure session cookie set
 12. **Frontend loads authenticated** - User is now logged in and ready to use the app
+
+**Required Spotify Scopes:**
+
+- `streaming` - Play music in the web player
+- `user-read-playback-position` - Read currently playing position
+- `user-modify-playback-state` - Control playback (play, pause, skip)
+- `user-read-playback-state` - Read playback state
+- `user-read-private` - Access private profile info
 
 ### Session Management
 

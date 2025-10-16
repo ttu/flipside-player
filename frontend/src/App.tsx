@@ -27,6 +27,7 @@ function App() {
   const { isAuthenticated, loading, checkAuth } = useAuthStore();
   const { view } = useUIStore();
   const [authError, setAuthError] = useState<string | null>(null);
+  const [sdkReady, setSdkReady] = useState(false);
 
   // Check for auth error in URL parameters
   useEffect(() => {
@@ -58,17 +59,19 @@ function App() {
 
     window.onSpotifyWebPlaybackSDKReady = () => {
       console.log('Spotify Web Playback SDK Ready');
+      setSdkReady(true);
     };
 
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
       }
+      setSdkReady(false);
     };
   }, [isAuthenticated]);
 
   // Initialize player and keyboard controls
-  useSpotifyPlayer();
+  useSpotifyPlayer(sdkReady);
   useKeyboardControls();
 
   if (loading) {
@@ -100,6 +103,12 @@ function App() {
       <PremiumWarning />
 
       <main className="app-main">
+        {view.mode === 'vinyl' && (
+          <div className="album-info-section left-side">
+            <AlbumTrackList />
+          </div>
+        )}
+
         <div className={`player-section ${view.mode}`}>
           <div className={`view-container ${view.mode}`}>
             {view.mode === 'vinyl' ? (
@@ -115,12 +124,6 @@ function App() {
             </div>
           )}
         </div>
-
-        {view.mode === 'vinyl' && (
-          <div className="album-info-section">
-            <AlbumTrackList />
-          </div>
-        )}
       </main>
 
       <footer className="app-footer">
