@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "description": "A browser-based Spotify player with a split-vinyl UI",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "workspaces": [
     "frontend",
     "backend"
   ],
   "scripts": {
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
+    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules",
     "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
     "dev:build": "npm run build && npm run dev",
     "backend:dev": "npm run dev --workspace=backend",

@@ -114,9 +114,9 @@ VITE_APP_NAME="FlipSide Player"
 
 ## Prerequisites
 
+- Node.js 22.x (LTS)
 - Redis server running on localhost:6379
 - Spotify app configured with correct redirect URI
-- Node.js and npm installed
 
 ## Development Workflow
 

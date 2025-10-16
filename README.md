@@ -1,39 +1,35 @@
 # FlipSide Player
 
-A browser-based Spotify player with a unique split-vinyl UI that lets you interact with music like a real vinyl record. Users can search, queue, play/pause/seek, flip sides, and switch Spotify Connect devices.
+A browser-based Spotify player with a unique split-vinyl UI that lets you interact with music like a real vinyl record.
+
+![FlipSide Player](https://img.shields.io/badge/Spotify-Premium%20Required-1DB954?logo=spotify&logoColor=white)
+![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20TypeScript%20%7C%20Fastify%20%7C%20Redis-blue)
 
 ## Features
 
-### MVP Features ✅
+- **Interactive Vinyl Interface** - Split-vinyl UI with Side A/B navigation
+- **Needle Drop Seeking** - Click anywhere on the vinyl to seek
+- **Side Flipping** - Toggle between first and second half of tracks
+- **Album Artwork Display** - Full-screen cover view mode
+- **Spotify Search** - Find and queue tracks from the catalog
+- **Full Keyboard Controls** - Navigate without touching the mouse
+- **Spotify Connect** - Switch playback between devices
+- **Secure OAuth 2.0** - PKCE flow with session management
 
-- **Spotify OAuth 2.0 Authentication** - Secure PKCE flow with token management
-- **Vinyl Interface** - Interactive vinyl disk split into Side A and Side B
-- **Needle Drop Seeking** - Click/drag on active vinyl side to seek through tracks
-- **Side Flipping** - Toggle between Side A (first half) and Side B (second half)
-- **Album Artwork** - Displays largest available Spotify album art
-- **Cover View Toggle** - Switch between vinyl and full-cover views
-- **Search & Queue** - Search Spotify catalog and build playback queue
-- **Playback Controls** - Play/pause, skip, volume, progress tracking
-- **Spotify Connect** - List and switch between available devices
-- **Keyboard Controls** - Full keyboard navigation support
-  - `Space` - Play/pause
-  - `F` - Flip vinyl sides
-  - `C` - Toggle vinyl/cover view
-  - `←/→` - Seek ±5 seconds
-  - `Shift + ←/→` - Seek ±30 seconds
+## Documentation
 
-### Architecture
+**Quick Links:**
 
-- **Frontend**: React + TypeScript + Vite
-- **Backend**: Node.js + Fastify + TypeScript
-- **Audio**: Spotify Web Playback SDK (loaded via CDN)
-- **State**: Zustand for client state management
-- **Storage**: Redis for sessions and caching
-- **Styling**: Custom CSS with responsive design
+- [Full Setup Guide](#setup) (below)
+- [Architecture & Tech Stack](docs/architecture.md)
+- [UI/UX & Components](docs/frontend.md)
+- [API Documentation](docs/backend.md)
+- [Troubleshooting Guide](docs/debugging.md)
+- [Complete Documentation Index](docs/README.md)
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 22.x (LTS)
 - Redis server
 - Spotify Premium account
 - Spotify app registration
@@ -53,13 +49,7 @@ A browser-based Spotify player with a unique split-vinyl UI that lets you intera
 
 4. Note your Client ID and Client Secret
 
-**Required Spotify Scopes**: The application will request the following permissions during OAuth:
-
-- `streaming` - Play music in the web player
-- `user-read-playback-position` - Read your currently playing position
-- `user-modify-playback-state` - Control playback (play, pause, skip)
-- `user-read-playback-state` - Read your playback state
-- `user-read-private` - Access your private profile info
+**Required Spotify Scopes**: streaming, playback position/control/state, private profile access. See [Architecture docs](docs/architecture.md) for details.
 
 ### 2. Quick Install
 
@@ -74,13 +64,11 @@ chmod +x install.sh
 Or install manually:
 
 ```bash
-# Install root dependencies
+# Install all dependencies (root, backend, and frontend)
 npm install
 
-# Install backend dependencies
+# Or install workspaces individually
 cd backend && npm install
-
-# Install frontend dependencies
 cd ../frontend && npm install
 ```
 
@@ -139,212 +127,104 @@ brew services start redis  # macOS with Homebrew
 
 ### 5. Run the Application
 
-#### Development Mode
-
-From the root directory:
+**Development:**
 
 ```bash
-# Start both backend and frontend
-npm run dev
-
-# Or start separately:
-npm run backend:dev   # Backend on :3001
-npm run frontend:dev  # Frontend on :5173
+npm run dev          # Start both backend and frontend
 ```
 
-#### Production Mode (Docker)
-
-For production deployment using Docker:
+**Docker:**
 
 ```bash
-# Build and start all services
-npm run docker:prod
-# or: docker-compose up --build -d
-
-# View logs
-npm run docker:logs
-# or: docker-compose logs -f
-
-# Stop services
-npm run docker:stop
-# or: docker-compose down
-
-# Clean up (remove volumes and orphaned containers)
-npm run docker:clean
+npm run docker:dev   # Development with hot reloading
+npm run docker:prod  # Production deployment
 ```
 
-#### Development Mode (Docker)
+Access the app at `http://localhost:5173` (dev) or `http://localhost:3001` (production).
 
-For development with Docker (hot reloading):
-
-```bash
-# Build and start development environment
-npm run docker:dev
-# or: docker-compose -f docker-compose.dev.yml up --build
-```
-
-**Production Environment Variables:**
-
-Create production environment files:
-
-`backend/.env.production`:
-
-```env
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/auth/spotify/callback
-SESSION_SECRET=your_secure_random_session_secret_32_chars_minimum
-REDIS_URL=redis://redis:6379
-PORT=3001
-FRONTEND_URL=https://yourdomain.com
-NODE_ENV=production
-```
-
-`frontend/.env.production`:
-
-```env
-VITE_API_BASE_URL=/api
-VITE_AUTH_BASE_URL=/api
-VITE_APP_NAME="FlipSide Player"
-```
-
-**Docker Services:**
-
-- **Redis**: Session storage and caching on port 6379
-- **Backend**: API server on port 3001
-- **Frontend**: React app on port 5173 (dev) or served via reverse proxy (prod)
+For production environment configuration, see the [Deployment](#deployment) section below.
 
 ## Deployment
 
-### Cross-Domain Deployment (e.g., Render, Vercel + Railway)
+**Docker Compose (Recommended):**
 
-For separate frontend and backend services on different domains:
-
-**Backend Environment Variables:**
-
-```env
-NODE_ENV=production
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-SPOTIFY_REDIRECT_URI=https://your-backend-domain.com/api/auth/spotify/callback
-FRONTEND_URL=https://your-frontend-domain.com
-SESSION_SECRET=your_secure_session_secret_32_chars_minimum
-REDIS_URL=your_redis_connection_string
+```bash
+npm run docker:prod   # Single-origin deployment with reverse proxy
 ```
 
-**Frontend Environment Variables:**
+**Cross-Domain Deployment** (separate frontend/backend hosts):
 
-```env
-VITE_API_BASE_URL=https://your-backend-domain.com/api
-VITE_AUTH_BASE_URL=https://your-backend-domain.com/api
-```
+- Set `NODE_ENV=production`
+- Configure `FRONTEND_URL` and redirect URIs appropriately
+- Update Spotify app settings with production redirect URI
 
-**Spotify App Settings:**
+For detailed deployment configuration and troubleshooting, see:
 
-- Add redirect URI: `https://your-backend-domain.com/api/auth/spotify/callback`
-
-### Single-Domain Deployment (Docker Compose)
-
-Use the included docker-compose.yml for single-origin deployment with reverse proxy.
+- [Architecture Documentation](docs/architecture.md) - Deployment options
+- [Debugging Guide](docs/debugging.md) - Production issues
 
 ## Usage
 
-1. **Login**: Click "Connect with Spotify" (requires Spotify Premium)
-2. **Search**: Use the search bar to find tracks
-3. **Queue**: Click search results to add to queue
-4. **Play**: Use transport controls or click queue items
-5. **Vinyl Interaction**:
-   - Click/drag on active vinyl half to seek
-   - Use flip button or press `F` to switch sides
-6. **Views**: Toggle between vinyl and cover views with `C`
-7. **Devices**: Use device picker to switch playback devices
+1. Login with Spotify (Premium required)
+2. Search and queue tracks
+3. Click vinyl to seek, press `F` to flip sides, `C` to toggle cover view
+4. Switch devices via device picker
+
+See [Frontend Documentation](docs/frontend.md) for full UI guide and keyboard shortcuts.
 
 ## Development
 
-### Project Structure
+**Quick Commands:**
 
-```
-flipside-player/
-├── backend/           # Node.js API server
-│   ├── src/
-│   │   ├── routes/    # Auth and Spotify API routes
-│   │   ├── types/     # TypeScript definitions
-│   │   └── utils/     # Spotify API client, Redis
-│   └── package.json
-├── frontend/          # React application
-│   ├── src/
-│   │   ├── components/ # UI components
-│   │   ├── hooks/     # Custom React hooks
-│   │   ├── stores/    # Zustand state stores
-│   │   ├── types/     # TypeScript definitions
-│   │   └── utils/     # API utilities
-│   └── package.json
-└── package.json       # Workspace root
+```bash
+npm install          # Install all dependencies
+npm run dev          # Start both frontend and backend
+npm run build        # Build for production
+npm run clean        # Remove all node_modules
+npm run format       # Format code with Prettier
+npm run lint         # Lint all code
 ```
 
-### Key Components
+For detailed architecture, components, and API documentation, see:
 
-- **VinylDeck**: Canvas-based vinyl interface with seeking
-- **CoverView**: Full album artwork display
-- **SearchBar**: Debounced Spotify search with results
-- **PlayerControls**: Transport controls and progress
-- **QueueStrip**: Draggable queue management
-- **DevicePicker**: Spotify Connect device switcher
-
-### API Endpoints
-
-- `GET /auth/spotify/start` - Start OAuth flow
-- `GET /auth/spotify/callback` - Handle OAuth callback
-- `POST /auth/logout` - Clear session
-- `GET /me` - Get current user
-- `GET /spotify/token` - Get access token for SDK
-- `GET /spotify/search` - Search catalog
-- `GET /spotify/devices` - List devices
-- `PUT /spotify/transfer-playback` - Transfer playback
-
-## Future Enhancements
-
-- **MusicBrainz Integration**: Vinyl-specific album artwork
-- **Favorites System**: Star albums and browse collection
-- **Edition Metadata**: Display release info (year, label, country)
-- **Advanced Interactions**: Beat detection, loop regions
-- **Mobile Support**: Touch gestures, responsive design
+- [Architecture Documentation](docs/architecture.md)
+- [Frontend Documentation](docs/frontend.md)
+- [Backend Documentation](docs/backend.md)
 
 ## Troubleshooting
 
-### Common Issues
+**Common Issues:**
 
-1. **"Web Playback SDK not available"**
-   - Ensure Spotify Premium subscription
-   - Check browser compatibility (Chrome/Firefox/Safari)
+- **Authentication fails** → Check redirect URI matches exactly in Spotify dashboard
+- **No devices found** → Open Spotify on another device first
+- **Playback doesn't start** → Requires Spotify Premium account
 
-2. **Authentication fails**
-   - Verify Spotify app redirect URI matches exactly
-   - Check client ID/secret in backend .env
+For complete troubleshooting guide, see [Debugging Documentation](docs/debugging.md)
 
-3. **No devices found**
-   - Start Spotify on another device first
-   - Refresh device list in picker
+**Browser Requirements:**
 
-4. **Playback doesn't start**
-   - Transfer playback to browser device first
-   - Check if another app is using Spotify
-
-### Browser Requirements
-
-- Modern browsers with Web Audio API support
+- Modern browser (Chrome, Firefox, Safari)
 - Spotify Premium account
 - Third-party cookies enabled
 
 ## License
 
-This project is for educational/demonstration purposes. Spotify integration requires compliance with Spotify's Developer Terms of Service.
+This project is for educational/demonstration purposes. Spotify integration requires compliance with [Spotify's Developer Terms of Service](https://developer.spotify.com/terms).
 
 ## Contributing
 
-1. Fork the repository
-2. Create feature branch
-3. Make changes with tests
-4. Submit pull request
+Contributions welcome! Please:
 
-For issues or feature requests, please use the GitHub issue tracker.
+1. Fork the repository
+2. Create a feature branch
+3. Follow code style (run `npm run format` and `npm run lint`)
+4. Update relevant documentation in `/docs`
+5. Submit a pull request
+
+See [docs/README.md](docs/README.md) for documentation guidelines.
+
+## Support
+
+- [Issue Tracker](https://github.com/yourusername/flipside-player/issues)
+- [Documentation](docs/README.md)
+- [Debugging Guide](docs/debugging.md)
