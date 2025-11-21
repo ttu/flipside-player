@@ -18,6 +18,9 @@ build/
 # IDE
 .vscode/
 .idea/
+.claude/
+.cursor/
+.cursors/
 
 # OS
 .DS_Store
