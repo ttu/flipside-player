@@ -263,7 +263,7 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
                   title="View album tracks"
                   disabled={loadingExpand === favorite.album.id}
                 >
-                  {loadingExpand === favorite.album.id ? '⟳' : '👁'}
+                  {loadingExpand === favorite.album.id ? '⟳' : '⋯'}
                 </button>
               </div>
               <div className="favorite-info">
@@ -277,8 +277,9 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
                   onClick={() => handleRemoveFavorite(favorite.id)}
                   className="remove-favorite-btn"
                   title="Remove from favorites"
+                  aria-label="Remove from favorites"
                 >
-                  ♥
+                  ×
                 </button>
               </div>
             </div>

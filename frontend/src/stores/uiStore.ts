@@ -18,6 +18,7 @@ export type StorageType = 'localStorage' | 'redis';
 // Storage persistence helpers
 const FAVORITES_STORAGE_KEY = 'flipside-favorites';
 const STORAGE_TYPE_KEY = 'flipside-storage-type';
+const LAST_PLAYED_ALBUM_KEY = 'flipside-last-played-album';
 
 const loadFavoritesFromStorage = (): FavoriteAlbum[] => {
   try {
@@ -98,6 +99,25 @@ const removeFavoriteFromRedis = async (albumId: string): Promise<boolean> => {
   }
 };
 
+// Last played album storage helpers
+const saveLastPlayedAlbum = (album: SpotifyAlbum): void => {
+  try {
+    localStorage.setItem(LAST_PLAYED_ALBUM_KEY, JSON.stringify(album));
+  } catch (error) {
+    console.error('Failed to save last played album:', error);
+  }
+};
+
+const loadLastPlayedAlbumFromStorage = (): SpotifyAlbum | null => {
+  try {
+    const stored = localStorage.getItem(LAST_PLAYED_ALBUM_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error('Failed to load last played album:', error);
+    return null;
+  }
+};
+
 interface UIStore {
   view: ViewState;
   artwork: ArtworkState;
@@ -129,6 +149,7 @@ interface UIStore {
   setAlbumTracks: (sideA: SpotifyTrack[], sideB: SpotifyTrack[]) => void;
   setAlbumLoading: (loading: boolean) => void;
   getCurrentSideTracks: () => SpotifyTrack[];
+  loadLastPlayedAlbum: () => Promise<void>;
 
   // Favorites actions
   addFavorite: (album: SpotifyAlbum) => void;
@@ -242,10 +263,15 @@ export const useUIStore = create<UIStore>((set, get) => ({
   },
 
   // Album actions
-  setCurrentAlbum: currentAlbum =>
+  setCurrentAlbum: currentAlbum => {
+    // Save last played album when setting a new album
+    if (currentAlbum) {
+      saveLastPlayedAlbum(currentAlbum);
+    }
     set(state => ({
       album: { ...state.album, currentAlbum },
-    })),
+    }));
+  },
 
   setAlbumTracks: (sideATracks, sideBTracks) =>
     set(state => ({
@@ -260,6 +286,44 @@ export const useUIStore = create<UIStore>((set, get) => ({
   getCurrentSideTracks: () => {
     const { vinyl, album } = get();
     return vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+  },
+
+  loadLastPlayedAlbum: async () => {
+    const { album } = get();
+    // Only load if no album is currently set
+    if (album.currentAlbum) return;
+
+    const lastPlayed = loadLastPlayedAlbumFromStorage();
+    if (!lastPlayed) return;
+
+    try {
+      // Import here to avoid circular dependency
+      const { getFullAlbum, splitAlbumIntoSides } = await import('../utils/spotify');
+
+      // Get full album with tracks
+      const fullAlbum = await getFullAlbum(lastPlayed.id);
+
+      // Split tracks into sides A and B
+      const { sideA, sideB } = splitAlbumIntoSides(fullAlbum.tracks.items, fullAlbum);
+
+      // Update stores
+      set(state => ({
+        album: {
+          ...state.album,
+          currentAlbum: fullAlbum,
+          sideATracks: sideA,
+          sideBTracks: sideB,
+        },
+      }));
+    } catch (error) {
+      console.error('Failed to load last played album:', error);
+      // Clear invalid last played album
+      try {
+        localStorage.removeItem(LAST_PLAYED_ALBUM_KEY);
+      } catch (e) {
+        // Ignore
+      }
+    }
   },
 
   // Favorites actions

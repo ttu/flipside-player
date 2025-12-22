@@ -469,20 +469,20 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
           const needleY = centerY + Math.sin(needleAngle) * needleRadius;
 
           // Draw prominent needle indicator
-          // Outer glow
-          ctx.fillStyle = 'rgba(255, 107, 53, 0.3)';
+          // Outer glow (brand accent)
+          ctx.fillStyle = 'rgba(99, 102, 241, 0.35)';
           ctx.beginPath();
           ctx.arc(needleX, needleY, 12, 0, Math.PI * 2);
           ctx.fill();
 
           // Inner dot
-          ctx.fillStyle = '#ff6b35';
+          ctx.fillStyle = '#6366f1';
           ctx.beginPath();
           ctx.arc(needleX, needleY, 8, 0, Math.PI * 2);
           ctx.fill();
 
           // Center highlight
-          ctx.fillStyle = '#ffaa88';
+          ctx.fillStyle = '#a5b4fc';
           ctx.beginPath();
           ctx.arc(needleX, needleY, 3, 0, Math.PI * 2);
           ctx.fill();

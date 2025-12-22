@@ -25,7 +25,7 @@ declare global {
 
 function App() {
   const { isAuthenticated, loading, checkAuth } = useAuthStore();
-  const { view } = useUIStore();
+  const { view, loadLastPlayedAlbum } = useUIStore();
   const [authError, setAuthError] = useState<string | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
 
@@ -45,6 +45,13 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Load last played album on app start
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      loadLastPlayedAlbum();
+    }
+  }, [isAuthenticated, loading, loadLastPlayedAlbum]);
 
   // Load Spotify Web Playback SDK from CDN
   // Note: The SDK is not available as an npm package, it must be loaded via script tag

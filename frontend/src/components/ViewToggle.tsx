@@ -5,17 +5,32 @@ interface ViewToggleProps {
 }
 
 export function ViewToggle({ className = '' }: ViewToggleProps) {
-  const { view, toggleView } = useUIStore();
+  const { view, setViewMode } = useUIStore();
 
   return (
-    <button
-      className={`view-toggle ${className}`}
-      onClick={toggleView}
-      aria-label={`Switch to ${view.mode === 'vinyl' ? 'favorites' : 'vinyl'} view`}
-      title={`Switch to ${view.mode === 'vinyl' ? 'favorites' : 'vinyl'} view (C)`}
-    >
-      {view.mode === 'vinyl' ? '♥' : '💿'}
-      <span className="view-label">{view.mode === 'vinyl' ? 'Favorites' : 'Vinyl'}</span>
-    </button>
+    <div className={`view-toggle ${className}`} role="tablist" aria-label="View mode selector">
+      <button
+        className={`view-toggle-option ${view.mode === 'vinyl' ? 'active' : ''}`}
+        onClick={() => setViewMode('vinyl')}
+        role="tab"
+        aria-selected={view.mode === 'vinyl'}
+        aria-label="Vinyl view"
+        title="Vinyl view (C)"
+      >
+        <span className="view-icon">◉</span>
+        <span className="view-label">Vinyl</span>
+      </button>
+      <button
+        className={`view-toggle-option ${view.mode === 'favorites' ? 'active' : ''}`}
+        onClick={() => setViewMode('favorites')}
+        role="tab"
+        aria-selected={view.mode === 'favorites'}
+        aria-label="Favorites view"
+        title="Favorites view (C)"
+      >
+        <span className="view-icon">♥</span>
+        <span className="view-label">Favorites</span>
+      </button>
+    </div>
   );
 }
