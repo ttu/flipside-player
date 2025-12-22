@@ -184,9 +184,21 @@ export class SpotifyAPI {
     return response.json();
   }
 
-  async startPlayback(accessToken: string, deviceId?: string, uris?: string[]): Promise<void> {
+  async startPlayback(
+    accessToken: string,
+    options: {
+      deviceId?: string;
+      uris?: string[];
+      offset?: { position: number };
+      position_ms?: number;
+    } = {}
+  ): Promise<void> {
     const body: any = {};
+    const { deviceId, uris, offset, position_ms } = options;
+
     if (uris) body.uris = uris;
+    if (offset) body.offset = offset;
+    if (typeof position_ms === 'number') body.position_ms = position_ms;
     if (deviceId) body.device_id = deviceId;
 
     const response = await fetch(`${SPOTIFY_BASE_URL}/me/player/play`, {

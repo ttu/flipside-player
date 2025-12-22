@@ -18,6 +18,13 @@ const transferSchema = z.object({
 const playSchema = z.object({
   deviceId: z.string().optional(),
   uris: z.array(z.string()).optional(),
+  offset: z
+    .object({
+      position: z.number().int().min(0),
+    })
+    .optional(),
+  // Use Spotify's field name so we can pass it through directly
+  position_ms: z.number().int().min(0).optional(),
 });
 
 const pauseSchema = z.object({
@@ -168,10 +175,10 @@ export async function spotifyRoutes(fastify: FastifyInstance) {
   // Start playback
   fastify.put('/spotify/play', async (request, reply) => {
     try {
-      const { deviceId, uris } = playSchema.parse(request.body);
+      const { deviceId, uris, offset, position_ms } = playSchema.parse(request.body);
       const accessToken = await getValidAccessToken(request);
 
-      await spotify.startPlayback(accessToken, deviceId, uris);
+      await spotify.startPlayback(accessToken, { deviceId, uris, offset, position_ms });
 
       return reply.send({ success: true });
     } catch (error: any) {

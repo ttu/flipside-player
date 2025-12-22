@@ -79,9 +79,19 @@ export function SearchBar({ className = '' }: SearchBarProps) {
       // Split tracks into sides A and B
       const { sideA, sideB } = splitAlbumIntoSides(fullAlbum.tracks.items, fullAlbum);
 
+      console.log('📀 Album tracks split:', {
+        totalTracks: fullAlbum.tracks.items.length,
+        sideACount: sideA.length,
+        sideBCount: sideB.length,
+        sideA: sideA.map(t => ({ id: t.id, name: t.name })),
+        sideB: sideB.map(t => ({ id: t.id, name: t.name })),
+      });
+
       // Update stores
       setCurrentAlbum(fullAlbum);
       setAlbumTracks(sideA, sideB);
+
+      console.log('✅ Stores updated with album tracks');
 
       // Start playback of the first track from side A
       if (sideA.length > 0 && player && sideA[0]?.uri) {

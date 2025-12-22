@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { usePlayerStore } from '../stores/playerStore';
 import { useUIStore } from '../stores/uiStore';
 import { triggerPremiumWarning } from '../utils/premiumWarning';
+import type { SpotifyTrack } from '../types';
 
 interface VinylDeckProps {
   className?: string;
@@ -23,55 +24,197 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
   const loadingImages = useRef<Set<string>>(new Set());
   // Throttle debug logging to once per second
   const lastDebugLog = useRef<number>(0);
+  // Drag state
+  const isDraggingRef = useRef<boolean>(false);
+  const dragPositionRef = useRef<number | null>(null);
+  const lastSeekTimeRef = useRef<number>(0);
+  // Track mismatch spam guard
+  const lastSyncedTrackIdRef = useRef<string | null>(null);
 
-  const getAngleFromPointer = useCallback((event: MouseEvent, canvas: HTMLCanvasElement) => {
+  const mapSdkTrackToSpotifyTrack = useCallback((sdkTrack: any): SpotifyTrack => {
+    return {
+      id: sdkTrack.id,
+      name: sdkTrack.name,
+      artists: (sdkTrack.artists ?? []).map((artist: any) => ({ name: artist.name })),
+      album: {
+        id: sdkTrack.album?.id ?? '',
+        name: sdkTrack.album?.name ?? '',
+        images: sdkTrack.album?.images ?? [],
+      },
+      uri: sdkTrack.uri,
+      duration_ms: sdkTrack.duration_ms,
+      track_number: sdkTrack.track_number,
+    };
+  }, []);
+
+  const getRadiusFromPointer = useCallback((event: MouseEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     const x = event.clientX - rect.left - centerX;
     const y = event.clientY - rect.top - centerY;
-
-    let angle = Math.atan2(y, x) * (180 / Math.PI);
-    if (angle < 0) angle += 360;
-
-    return angle;
+    return Math.sqrt(x * x + y * y);
   }, []);
 
-  const getTimeFromAngle = useCallback(
-    (angle: number) => {
-      if (!durationMs) return 0;
+  const getTimeFromRadius = useCallback(
+    (radius: number, canvasRadius: number) => {
+      const sideTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+      const sideTotalMs = sideTracks.reduce((sum, t) => sum + (t?.duration_ms || 0), 0);
 
-      const halfDuration = durationMs / 2;
+      if (sideTotalMs === 0) return 0;
 
-      if (vinyl.activeSide === 'A') {
-        // Side A: 0° to 180° maps to 0 to halfDuration
-        if (angle > 180) return 0; // Outside active zone
-        return (angle / 180) * halfDuration;
-      } else {
-        // Side B: 180° to 360° maps to halfDuration to durationMs
-        if (angle <= 180) return halfDuration; // Outside active zone
-        return halfDuration + ((angle - 180) / 180) * halfDuration;
+      const outerRadius = canvasRadius - 10;
+      const innerRadius = canvasRadius * 0.3;
+
+      // Clamp radius to valid range
+      const clampedRadius = Math.max(innerRadius, Math.min(outerRadius, radius));
+
+      // Calculate progress from radius (outer = start, inner = end)
+      const progress = 1 - (clampedRadius - innerRadius) / (outerRadius - innerRadius);
+
+      return progress * sideTotalMs;
+    },
+    [vinyl.activeSide, album.sideATracks, album.sideBTracks]
+  );
+
+  const seekToPosition = useCallback(
+    async (sideElapsedMs: number) => {
+      if (!player) return;
+
+      const sideTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+      let accumulatedMs = 0;
+      let targetTrackIndex = 0;
+      let positionInTrack = 0;
+
+      // Find which track and position within that track
+      for (let i = 0; i < sideTracks.length; i++) {
+        const trackDuration = sideTracks[i].duration_ms;
+        if (accumulatedMs + trackDuration > sideElapsedMs) {
+          targetTrackIndex = i;
+          positionInTrack = sideElapsedMs - accumulatedMs;
+          break;
+        }
+        accumulatedMs += trackDuration;
+      }
+
+      // If we're in a different track, switch to it
+      const currentTrackIndex = sideTracks.findIndex(t => t.id === track?.id);
+
+      try {
+        if (currentTrackIndex !== targetTrackIndex) {
+          // Switch to the target track
+          await fetch('/api/spotify/play', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              deviceId: usePlayerStore.getState().deviceId,
+              uris: sideTracks.map(t => t.uri),
+              offset: { position: targetTrackIndex },
+              position_ms: Math.round(positionInTrack),
+            }),
+          });
+          // Update animated position to prevent jump back
+          animatedPositionMsRef.current = positionInTrack;
+          lastTimestampRef.current = performance.now();
+        } else {
+          // Same track, just seek
+          await player.seek(Math.round(positionInTrack));
+          // Update animated position to prevent jump back
+          animatedPositionMsRef.current = positionInTrack;
+          lastTimestampRef.current = performance.now();
+        }
+      } catch (error) {
+        console.error('Seek failed:', error);
       }
     },
-    [durationMs, vinyl.activeSide]
+    [player, vinyl.activeSide, album.sideATracks, album.sideBTracks, track]
   );
 
   const handleCanvasClick = useCallback(
     async (event: MouseEvent) => {
       const canvas = canvasRef.current;
-      if (!canvas || !player || !durationMs) return;
+      if (!canvas || !player) return;
 
-      const angle = getAngleFromPointer(event, canvas);
-      const targetTime = getTimeFromAngle(angle);
+      const rect = canvas.getBoundingClientRect();
+      const canvasRadius = Math.min(rect.width, rect.height) / 2 - 20;
+      const radius = getRadiusFromPointer(event, canvas);
+      const sideElapsedMs = getTimeFromRadius(radius, canvasRadius);
 
-      try {
-        await player.seek(Math.round(targetTime));
-      } catch (error) {
-        console.error('Seek failed:', error);
+      await seekToPosition(sideElapsedMs);
+    },
+    [player, getRadiusFromPointer, getTimeFromRadius, seekToPosition]
+  );
+
+  const handleMouseDown = useCallback(
+    (event: MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas || !player) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const canvasRadius = Math.min(rect.width, rect.height) / 2 - 20;
+      const radius = getRadiusFromPointer(event, canvas);
+
+      // Check if click is near the needle (within reasonable distance)
+      const sideTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+      const sideTotalMs = sideTracks.reduce((sum, t) => sum + (t?.duration_ms || 0), 0);
+
+      if (sideTotalMs > 0 && track) {
+        let elapsedBeforeCurrent = 0;
+        for (const t of sideTracks) {
+          if (t.id === track.id) break;
+          elapsedBeforeCurrent += t.duration_ms;
+        }
+        const sideElapsedMs = elapsedBeforeCurrent + animatedPositionMsRef.current;
+        const progress = sideElapsedMs / sideTotalMs;
+
+        const outerRadius = canvasRadius - 10;
+        const innerRadius = canvasRadius * 0.3;
+        const needleRadius = outerRadius - progress * (outerRadius - innerRadius);
+
+        // If within 30px of needle, start dragging
+        if (Math.abs(radius - needleRadius) < 30) {
+          isDraggingRef.current = true;
+          event.preventDefault();
+        }
       }
     },
-    [player, durationMs, getAngleFromPointer, getTimeFromAngle]
+    [player, getRadiusFromPointer, vinyl.activeSide, album.sideATracks, album.sideBTracks, track]
   );
+
+  const handleMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const canvasRadius = Math.min(rect.width, rect.height) / 2 - 20;
+      const radius = getRadiusFromPointer(event, canvas);
+      const sideElapsedMs = getTimeFromRadius(radius, canvasRadius);
+
+      // Update drag position immediately for visual feedback
+      dragPositionRef.current = sideElapsedMs;
+
+      // Throttle actual seek requests to every 100ms
+      const now = performance.now();
+      if (now - lastSeekTimeRef.current > 100) {
+        lastSeekTimeRef.current = now;
+        seekToPosition(sideElapsedMs);
+      }
+    },
+    [getRadiusFromPointer, getTimeFromRadius, seekToPosition]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (isDraggingRef.current && dragPositionRef.current !== null) {
+      // Final seek to the exact position
+      seekToPosition(dragPositionRef.current);
+    }
+    isDraggingRef.current = false;
+    dragPositionRef.current = null;
+  }, [seekToPosition]);
 
   const drawVinyl = useCallback(
     (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -178,6 +321,8 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
           console.log('🔍 Side Debug:', {
             activeSide: vinyl.activeSide,
             sideTracksCount: sideTracks.length,
+            sideATracksRaw: album.sideATracks.length,
+            sideBTracksRaw: album.sideBTracks.length,
             sideTracks: sideTracks.map(t => ({
               id: t.id,
               name: t.name,
@@ -185,108 +330,118 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
             })),
             sideTotalMs,
             currentTrack: track ? { id: track.id, name: track.name } : null,
+            albumData: {
+              hasCurrentAlbum: !!album.currentAlbum,
+              albumName: album.currentAlbum?.name,
+            },
           });
         }
 
         if (sideTotalMs > 0) {
           let sideElapsedMs: number;
 
-          // Use actual track from Spotify player if available and different from store
-          const currentTrack =
-            actualTrackRef.current && track && actualTrackRef.current.id !== track.id
-              ? {
-                  id: actualTrackRef.current.id,
-                  name: actualTrackRef.current.name,
-                  duration_ms: actualTrackRef.current.duration_ms,
-                }
-              : track;
-
-          if (currentTrack) {
-            let elapsedBeforeCurrent = 0;
-            let trackFoundInSide = false;
-            for (const t of sideTracks) {
-              if (t.id === currentTrack.id) {
-                trackFoundInSide = true;
-                break;
-              }
-              elapsedBeforeCurrent += t.duration_ms;
-            }
-
-            if (shouldLog) {
-              console.log('📍 Track Matching:', {
-                currentTrackId: currentTrack.id,
-                currentTrackName: currentTrack.name,
-                trackFoundInSide,
-                elapsedBeforeCurrent,
-                sideTrackIds: sideTracks.map(t => t.id),
-                usingActualTrack:
-                  actualTrackRef.current && track && actualTrackRef.current.id !== track.id,
-              });
-            }
-            // Use the animated position within the current track
-            const currentTrackPosition = Math.min(
-              animatedPositionMsRef.current,
-              currentTrack.duration_ms
-            );
-
-            if (trackFoundInSide) {
-              sideElapsedMs = Math.max(
-                0,
-                Math.min(sideTotalMs, elapsedBeforeCurrent + currentTrackPosition)
-              );
-            } else {
-              // Fallback: if track not found in side, assume it's the first track on this side
-              // This helps during track transitions when state is temporarily out of sync
-              sideElapsedMs = Math.max(0, Math.min(sideTotalMs, currentTrackPosition));
-              if (shouldLog) {
-                console.log('🔄 Using fallback calculation for track not in side');
-              }
-            }
-
-            // Add a warning if there's a potential track sync issue
-            if (!trackFoundInSide && shouldLog) {
-              console.warn('⚠️ TRACK SYNC ISSUE: Current track not found in side tracks!', {
-                currentTrack: currentTrack.name,
-                currentTrackId: currentTrack.id,
-                activeSide: vinyl.activeSide,
-                sideTrackNames: sideTracks.map(t => t.name),
-              });
-            }
-
-            if (shouldLog) {
-              console.log('🎵 Needle Debug:', {
-                trackName: currentTrack.name,
-                activeSide: vinyl.activeSide,
-                sideTotalMs,
-                elapsedBeforeCurrent,
-                currentTrackPosition: Math.round(currentTrackPosition),
-                animatedPositionMs: Math.round(animatedPositionMsRef.current),
-                sideElapsedMs: Math.round(sideElapsedMs),
-                progress: Math.round((sideElapsedMs / sideTotalMs) * 100) + '%',
-                trackFoundInSide,
-              });
-            }
-          } else if (durationMs > 0) {
-            // Fallback: estimate using global position/duration evenly over the side
-            const half = durationMs / 2;
-            const pos = animatedPositionMsRef.current;
-            const inSide = vinyl.activeSide === 'A' ? Math.min(pos, half) : Math.max(0, pos - half);
-            sideElapsedMs = Math.max(0, Math.min(sideTotalMs, inSide));
-
-            if (shouldLog) {
-              console.log('🎵 Needle Debug (fallback):', {
-                activeSide: vinyl.activeSide,
-                sideTotalMs,
-                pos,
-                inSide,
-                sideElapsedMs,
-                progress: Math.round((sideElapsedMs / sideTotalMs) * 100) + '%',
-              });
-            }
+          // If dragging, use the drag position instead of actual playback position
+          if (isDraggingRef.current && dragPositionRef.current !== null) {
+            sideElapsedMs = dragPositionRef.current;
           } else {
-            sideElapsedMs = 0;
-            if (shouldLog) {
-              console.log('🎵 Needle Debug: No duration data');
+            // Use actual track from Spotify player if available and different from store
+            const currentTrack =
+              actualTrackRef.current && track && actualTrackRef.current.id !== track.id
+                ? {
+                    id: actualTrackRef.current.id,
+                    name: actualTrackRef.current.name,
+                    duration_ms: actualTrackRef.current.duration_ms,
+                  }
+                : track;
+
+            if (currentTrack) {
+              let elapsedBeforeCurrent = 0;
+              let trackFoundInSide = false;
+              for (const t of sideTracks) {
+                if (t.id === currentTrack.id) {
+                  trackFoundInSide = true;
+                  break;
+                }
+                elapsedBeforeCurrent += t.duration_ms;
+              }
+
+              if (shouldLog) {
+                console.log('📍 Track Matching:', {
+                  currentTrackId: currentTrack.id,
+                  currentTrackName: currentTrack.name,
+                  trackFoundInSide,
+                  elapsedBeforeCurrent,
+                  sideTrackIds: sideTracks.map(t => t.id),
+                  usingActualTrack:
+                    actualTrackRef.current && track && actualTrackRef.current.id !== track.id,
+                });
+              }
+              // Use the animated position within the current track
+              const currentTrackPosition = Math.min(
+                animatedPositionMsRef.current,
+                currentTrack.duration_ms
+              );
+
+              if (trackFoundInSide) {
+                sideElapsedMs = Math.max(
+                  0,
+                  Math.min(sideTotalMs, elapsedBeforeCurrent + currentTrackPosition)
+                );
+              } else {
+                // Fallback: if track not found in side, assume it's the first track on this side
+                // This helps during track transitions when state is temporarily out of sync
+                sideElapsedMs = Math.max(0, Math.min(sideTotalMs, currentTrackPosition));
+                if (shouldLog) {
+                  console.log('🔄 Using fallback calculation for track not in side');
+                }
+              }
+
+              // Add a warning if there's a potential track sync issue
+              if (!trackFoundInSide && shouldLog) {
+                console.warn('⚠️ TRACK SYNC ISSUE: Current track not found in side tracks!', {
+                  currentTrack: currentTrack.name,
+                  currentTrackId: currentTrack.id,
+                  activeSide: vinyl.activeSide,
+                  sideTrackNames: sideTracks.map(t => t.name),
+                });
+              }
+
+              if (shouldLog) {
+                console.log('🎵 Needle Debug:', {
+                  trackName: currentTrack.name,
+                  activeSide: vinyl.activeSide,
+                  sideTotalMs,
+                  elapsedBeforeCurrent,
+                  currentTrackPosition: Math.round(currentTrackPosition),
+                  animatedPositionMs: Math.round(animatedPositionMsRef.current),
+                  sideElapsedMs: Math.round(sideElapsedMs),
+                  progress: Math.round((sideElapsedMs / sideTotalMs) * 100) + '%',
+                  trackFoundInSide,
+                });
+              }
+            } else if (durationMs > 0) {
+              // Fallback: estimate using global position/duration evenly over the side
+              const half = durationMs / 2;
+              const pos = animatedPositionMsRef.current;
+              const inSide =
+                vinyl.activeSide === 'A' ? Math.min(pos, half) : Math.max(0, pos - half);
+              sideElapsedMs = Math.max(0, Math.min(sideTotalMs, inSide));
+
+              if (shouldLog) {
+                console.log('🎵 Needle Debug (fallback):', {
+                  activeSide: vinyl.activeSide,
+                  sideTotalMs,
+                  pos,
+                  inSide,
+                  sideElapsedMs,
+                  progress: Math.round((sideElapsedMs / sideTotalMs) * 100) + '%',
+                });
+              }
+            } else {
+              sideElapsedMs = 0;
+              if (shouldLog) {
+                console.log('🎵 Needle Debug: No duration data');
+              }
             }
           }
 
@@ -313,17 +468,23 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
           const needleX = centerX + Math.cos(needleAngle) * needleRadius;
           const needleY = centerY + Math.sin(needleAngle) * needleRadius;
 
-          ctx.strokeStyle = '#ff6b35';
-          ctx.lineWidth = 4;
+          // Draw prominent needle indicator
+          // Outer glow
+          ctx.fillStyle = 'rgba(255, 107, 53, 0.3)';
           ctx.beginPath();
-          ctx.moveTo(centerX, centerY);
-          ctx.lineTo(needleX, needleY);
-          ctx.stroke();
+          ctx.arc(needleX, needleY, 12, 0, Math.PI * 2);
+          ctx.fill();
 
-          // Needle dot
+          // Inner dot
           ctx.fillStyle = '#ff6b35';
           ctx.beginPath();
-          ctx.arc(needleX, needleY, 5, 0, Math.PI * 2);
+          ctx.arc(needleX, needleY, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Center highlight
+          ctx.fillStyle = '#ffaa88';
+          ctx.beginPath();
+          ctx.arc(needleX, needleY, 3, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -371,12 +532,26 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
           const actualTrack = state.track_window?.current_track;
           actualTrackRef.current = actualTrack;
 
-          if (actualTrack && track && actualTrack.id !== track.id) {
-            console.warn('🔄 TRACK MISMATCH DETECTED:', {
-              storeTrack: { id: track.id, name: track.name },
-              actualTrack: { id: actualTrack.id, name: actualTrack.name },
-              message: 'Player store track differs from actual playing track',
-            });
+          if (actualTrack) {
+            const playerStore = usePlayerStore.getState();
+            const storeTrack = playerStore.track;
+
+            // If the actual Spotify track differs from our store track, log once and sync the store.
+            // Compare against the latest store state (not the stale `track` prop) and avoid
+            // logging repeatedly for the same actual track id.
+            if (!storeTrack || storeTrack.id !== actualTrack.id) {
+              if (lastSyncedTrackIdRef.current !== actualTrack.id && storeTrack) {
+                console.warn('🔄 TRACK MISMATCH DETECTED:', {
+                  storeTrack: { id: storeTrack.id, name: storeTrack.name },
+                  actualTrack: { id: actualTrack.id, name: actualTrack.name },
+                  message: 'Player store track differs from actual playing track',
+                });
+              }
+
+              const normalizedTrack = mapSdkTrackToSpotifyTrack(actualTrack);
+              playerStore.setTrack(normalizedTrack);
+              lastSyncedTrackIdRef.current = actualTrack.id;
+            }
           }
         }
       });
@@ -397,7 +572,7 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
     drawVinyl(ctx, canvas);
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [drawVinyl, isPlaying, player, track]);
+  }, [drawVinyl, isPlaying, player, track, mapSdkTrackToSpotifyTrack]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -443,11 +618,19 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
     if (!canvas) return;
 
     canvas.addEventListener('click', handleCanvasClick);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseUp);
 
     return () => {
       canvas.removeEventListener('click', handleCanvasClick);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mouseleave', handleMouseUp);
     };
-  }, [handleCanvasClick]);
+  }, [handleCanvasClick, handleMouseDown, handleMouseMove, handleMouseUp]);
 
   // Start playback when side changes
   useEffect(() => {
@@ -475,12 +658,52 @@ export function VinylDeck({ className = '' }: VinylDeckProps) {
     }
   }, [vinyl.activeSide, album.sideATracks, album.sideBTracks]);
 
+  const handleMouseMoveForCursor = useCallback(
+    (event: MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas || !player) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const canvasRadius = Math.min(rect.width, rect.height) / 2 - 20;
+      const radius = getRadiusFromPointer(event, canvas);
+
+      // Check if hovering near the needle
+      const sideTracks = vinyl.activeSide === 'A' ? album.sideATracks : album.sideBTracks;
+      const sideTotalMs = sideTracks.reduce((sum, t) => sum + (t?.duration_ms || 0), 0);
+
+      if (sideTotalMs > 0 && track) {
+        let elapsedBeforeCurrent = 0;
+        for (const t of sideTracks) {
+          if (t.id === track.id) break;
+          elapsedBeforeCurrent += t.duration_ms;
+        }
+        const sideElapsedMs = elapsedBeforeCurrent + animatedPositionMsRef.current;
+        const progress = sideElapsedMs / sideTotalMs;
+
+        const outerRadius = canvasRadius - 10;
+        const innerRadius = canvasRadius * 0.3;
+        const needleRadius = outerRadius - progress * (outerRadius - innerRadius);
+
+        // Show grab cursor when near needle
+        if (Math.abs(radius - needleRadius) < 30) {
+          canvas.style.cursor = isDraggingRef.current ? 'grabbing' : 'grab';
+        } else {
+          canvas.style.cursor = 'pointer';
+        }
+      } else {
+        canvas.style.cursor = 'pointer';
+      }
+    },
+    [player, getRadiusFromPointer, vinyl.activeSide, album.sideATracks, album.sideBTracks, track]
+  );
+
   return (
     <div className={`vinyl-deck ${className}`}>
       <canvas
         ref={canvasRef}
         className="vinyl-canvas"
         style={{ cursor: player ? 'pointer' : 'default' }}
+        onMouseMove={handleMouseMoveForCursor as any}
       />
     </div>
   );
