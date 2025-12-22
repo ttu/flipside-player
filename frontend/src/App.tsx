@@ -53,11 +53,24 @@ function App() {
     }
   }, [isAuthenticated, loading, loadLastPlayedAlbum]);
 
-  // Load Spotify Web Playback SDK from CDN
+  // Load Spotify Web Playback SDK from CDN or use mock
   // Note: The SDK is not available as an npm package, it must be loaded via script tag
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    const useMock = import.meta.env.VITE_USE_MOCK_SDK === 'true';
+
+    if (useMock) {
+      // Use mock SDK
+      import('./mocks/spotifySDK').then(({ setupSpotifySDKMock }) => {
+        setupSpotifySDKMock();
+        console.log('🎭 Using Mock Spotify SDK');
+        setSdkReady(true);
+      });
+      return;
+    }
+
+    // Load real SDK from CDN
     const script = document.createElement('script');
     script.src = 'https://sdk.scdn.co/spotify-player.js';
     script.async = true;

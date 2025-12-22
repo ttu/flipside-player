@@ -727,3 +727,86 @@ npm run build
 ```
 
 This debugging guide should help resolve most common issues. For persistent problems, refer to the project's issue tracker or consult the development team.
+
+---
+
+## Mock Spotify SDK and API
+
+FlipSide Player includes mocks for both the Spotify Web Playback SDK (frontend) and Spotify Web API (backend) to enable testing and development without requiring real Spotify connections.
+
+### Frontend: Spotify SDK Mock
+
+**Location**: `frontend/src/mocks/spotifySDK.ts`
+
+**Usage in Development**:
+
+```typescript
+// In App.tsx or main.tsx
+if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_SDK === 'true') {
+  import('./mocks/spotifySDK').then(({ setupSpotifySDKMock }) => {
+    setupSpotifySDKMock();
+  });
+}
+```
+
+Set in `.env`:
+
+```
+VITE_USE_MOCK_SDK=true
+```
+
+**Features**:
+
+- Full Player API implementation
+- Event listeners (ready, state_changed, errors)
+- Playback control simulation
+- Position updates
+- Error simulation for testing
+
+See `frontend/src/mocks/README.md` for detailed usage.
+
+### Backend: Spotify API Mock
+
+**Location**: `backend/src/mocks/spotifyAPI.ts`
+
+**Usage in Development**:
+
+```typescript
+// In routes/spotify.ts
+import { SpotifyAPI } from '../utils/spotify';
+import { MockSpotifyAPI } from '../mocks/spotifyAPI';
+
+const useMock = process.env.NODE_ENV === 'development' && process.env.USE_MOCK_SPOTIFY === 'true';
+
+const spotify = useMock
+  ? new MockSpotifyAPI()
+  : new SpotifyAPI(
+      process.env.SPOTIFY_CLIENT_ID!,
+      process.env.SPOTIFY_CLIENT_SECRET!,
+      process.env.SPOTIFY_REDIRECT_URI!
+    );
+```
+
+Set in `.env`:
+
+```
+USE_MOCK_SPOTIFY=true
+```
+
+**Features**:
+
+- All SpotifyAPI methods implemented
+- Mock data (tracks, devices, albums)
+- Error simulation
+- Network delay simulation
+- Customizable mock data
+
+See `backend/src/mocks/README.md` for detailed usage.
+
+### Benefits
+
+- ✅ Test without Spotify Premium account
+- ✅ Test without network connection
+- ✅ Test error scenarios
+- ✅ Faster development iteration
+- ✅ Consistent test data

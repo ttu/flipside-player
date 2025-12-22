@@ -17,7 +17,28 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
   user: undefined,
   loading: true,
 
-  login: () => {
+  login: async () => {
+    // In mock mode, use auto-login endpoint
+    const useMock = import.meta.env.VITE_USE_MOCK_SDK === 'true';
+
+    if (useMock) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/mock-login`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          set({ isAuthenticated: true, user: data.user, loading: false });
+          return;
+        }
+      } catch (error) {
+        console.error('Mock login failed, falling back to OAuth flow:', error);
+      }
+    }
+
+    // Real OAuth flow or fallback
     window.location.href = `${AUTH_BASE_URL}/auth/spotify/start`;
   },
 

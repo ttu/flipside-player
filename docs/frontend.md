@@ -399,6 +399,480 @@ interface QueueState {
 - **Progressive loading**: Images and data load in priority order
 - **Smooth state changes**: No jarring jumps between loading/loaded states
 
+## Spotify Web Playback SDK Integration
+
+FlipSide Player uses the **Spotify Web Playback SDK** for direct browser-based music playback. The SDK provides real-time playback control, state synchronization, and device management without requiring the Spotify desktop app.
+
+### SDK Loading & Initialization
+
+The SDK is loaded dynamically from Spotify's CDN when the user is authenticated:
+
+```typescript
+// App.tsx - SDK Loading
+useEffect(() => {
+  if (!isAuthenticated) return;
+
+  const script = document.createElement('script');
+  script.src = 'https://sdk.scdn.co/spotify-player.js';
+  script.async = true;
+  document.body.appendChild(script);
+
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    console.log('Spotify Web Playback SDK Ready');
+    setSdkReady(true);
+  };
+
+  return () => {
+    if (document.body.contains(script)) {
+      document.body.removeChild(script);
+    }
+    setSdkReady(false);
+  };
+}, [isAuthenticated]);
+```
+
+**Key Points:**
+
+- SDK is **not available as an npm package** - must be loaded via script tag
+- Loaded only after user authentication
+- Global callback `onSpotifyWebPlaybackSDKReady` signals when SDK is ready
+- Script is cleaned up on component unmount
+
+### Player Initialization
+
+The player is initialized in the `useSpotifyPlayer` hook once the SDK is ready:
+
+```typescript
+// useSpotifyPlayer.ts - Player Setup
+const player = new window.Spotify.Player({
+  name: 'FlipSide Player',
+  getOAuthToken: async (cb: (token: string) => void) => {
+    try {
+      const token = await getSpotifyToken(); // Fetches from backend /api/spotify/token
+      cb(token);
+    } catch (error) {
+      console.error('Failed to get OAuth token:', error);
+    }
+  },
+  volume: playerStore.volume,
+});
+```
+
+**Configuration:**
+
+- **name**: Device name shown in Spotify Connect
+- **getOAuthToken**: Callback that provides fresh access tokens (required for SDK)
+- **volume**: Initial volume level (0.0 to 1.0)
+
+### Event Listeners
+
+The SDK uses an event-driven architecture for state updates:
+
+#### Ready Event
+
+```typescript
+player.addListener('ready', ({ device_id }) => {
+  console.log('Spotify Player ready with device ID:', device_id);
+  playerStore.setDeviceId(device_id);
+  playerStore.setPlayerReady(true);
+
+  // Transfer playback to this web player
+  transferPlayback(device_id, true).catch(err => {
+    console.error('Failed to transfer playback to Web Player:', err);
+  });
+});
+```
+
+#### Player State Changed
+
+```typescript
+player.addListener('player_state_changed', state => {
+  if (!state) return;
+
+  const track = state.track_window.current_track;
+  const spotifyTrack = track
+    ? {
+        id: track.id || '',
+        name: track.name || '',
+        artists: track.artists || [],
+        album: {
+          id: track.album?.uri?.split(':')[2] || '',
+          name: track.album?.name || '',
+          images:
+            track.album?.images?.map(img => ({
+              url: img.url,
+              width: img.width || 640,
+              height: img.height || 640,
+            })) || [],
+        },
+        uri: track.uri || '',
+        duration_ms: track.duration_ms || 0,
+      }
+    : null;
+
+  playerStore.updatePlaybackState({
+    isPlaying: !state.paused,
+    positionMs: state.position,
+    durationMs: state.duration,
+    track: spotifyTrack,
+  });
+});
+```
+
+#### Error Events
+
+```typescript
+player.addListener('initialization_error', ({ message }) => {
+  console.error('Spotify Player initialization error:', message);
+});
+
+player.addListener('authentication_error', ({ message }) => {
+  console.error('Spotify Player authentication error:', message);
+});
+
+player.addListener('account_error', ({ message }) => {
+  console.error('Spotify Player account error:', message);
+  // Usually indicates Premium subscription required
+});
+
+player.addListener('playback_error', ({ message }) => {
+  console.error('Spotify Player playback error:', message);
+});
+```
+
+### Playback Control Methods
+
+The SDK provides direct methods for playback control:
+
+```typescript
+// Play/Pause
+await player.togglePlay();
+await player.resume();
+await player.pause();
+
+// Track Navigation
+await player.nextTrack();
+await player.previousTrack();
+
+// Seeking
+await player.seek(positionMs); // Position in milliseconds
+
+// Volume Control
+await player.setVolume(volume); // 0.0 to 1.0
+const currentVolume = await player.getVolume();
+
+// State Queries
+const state = await player.getCurrentState();
+```
+
+**Note**: These SDK methods control the **Web Player device** directly. For controlling other Spotify Connect devices, use the Web API endpoints (see Backend documentation).
+
+### State Synchronization
+
+The app uses a **dual-state approach**:
+
+1. **SDK State (Primary)**: Real-time updates from `player_state_changed` events
+2. **Polling (Fallback)**: Periodic `getCurrentState()` calls every 1 second as a safety net
+
+```typescript
+// Polling interval for state updates
+pollingIntervalRef.current = window.setInterval(async () => {
+  try {
+    const state = await player.getCurrentState();
+    if (!state) {
+      console.warn('Web Player state is null - device might be disconnected');
+      return;
+    }
+    // Update Zustand store with current state
+    playerStore.updatePlaybackState({...});
+  } catch (err) {
+    console.warn('Polling error - device may be disconnected:', err);
+    ensureActiveDeviceWithRetry(2, 500);
+  }
+}, 1000);
+```
+
+### Device Management
+
+The Web Player appears as a Spotify Connect device. The app ensures it becomes the active device:
+
+```typescript
+const ensureActiveDeviceWithRetry = async (maxAttempts = 5, delayMs = 1000) => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const devices = await getDevices(); // Backend API call
+      const list = devices?.devices || [];
+
+      if (list.length > 0) {
+        // Prefer the Web Player (SDK) device
+        const sdkId = playerStore.deviceId;
+        const webPlayer =
+          list.find((d: any) => d.id === sdkId) ||
+          list.find((d: any) => (d.name || '').toLowerCase().includes('flipside')) ||
+          list.find((d: any) => (d.name || '').toLowerCase().startsWith('web player'));
+
+        const target = webPlayer || list[0];
+        await transferPlayback(target.id, true); // Backend API call
+        playerStore.setDeviceId(target.id);
+        return;
+      }
+    } catch (_) {
+      // Retry on error
+    }
+    await new Promise(res => setTimeout(res, delayMs));
+  }
+};
+```
+
+### Connection Management
+
+The player connects and disconnects based on component lifecycle:
+
+```typescript
+// Connect to player
+player.connect().then(success => {
+  if (success) {
+    console.log('Successfully connected to Spotify Player');
+    // Start polling and ensure device is active
+  } else {
+    console.error('Failed to connect to Spotify Player');
+  }
+});
+
+// Cleanup on unmount
+return () => {
+  player.disconnect();
+  playerStore.setPlayer(null);
+  playerStore.setPlayerReady(false);
+  if (pollingIntervalRef.current) {
+    clearInterval(pollingIntervalRef.current);
+    pollingIntervalRef.current = null;
+  }
+};
+```
+
+### Browser Visibility Handling
+
+The app handles browser tab visibility changes to reconnect when the tab becomes visible:
+
+```typescript
+useEffect(() => {
+  const handleVisibilityChange = () => {
+    if (!document.hidden && playerStore.player && playerStore.deviceId) {
+      console.log('Tab became visible - ensuring Web Player is active');
+      setTimeout(() => {
+        ensureActiveDeviceWithRetry(3, 1000);
+      }, 2000);
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}, [playerStore.player, playerStore.deviceId, ensureActiveDeviceWithRetry]);
+```
+
+### SDK Capabilities & Limitations
+
+**What the SDK CAN do:**
+
+- Control playback on the **Web Player device only** (play, pause, skip, seek, volume)
+- Receive real-time state updates via event listeners
+- Get current playback state (track, position, duration)
+- Manage the Web Player device connection
+
+**What the SDK CANNOT do:**
+
+- ❌ **Search** for tracks, albums, or artists (requires Web API)
+- ❌ **Fetch album data** or track metadata (requires Web API)
+- ❌ **List devices** or manage Spotify Connect devices (requires Web API)
+- ❌ **Transfer playback** to other devices (requires Web API)
+- ❌ **Control other devices** (phone, desktop app, etc.) - only the Web Player
+
+**SDK Requirements:**
+
+1. **Premium Subscription Required**: The Web Playback SDK only works with Spotify Premium accounts
+2. **Browser Support**: Modern browsers with Web Audio API support
+3. **Token Refresh**: Tokens must be refreshed via `getOAuthToken` callback when expired
+4. **Single Device**: One Web Player instance per browser tab/window
+5. **No Offline Playback**: Requires active internet connection
+
+### Integration with Backend API
+
+The frontend uses **both** SDK and Web API for different purposes:
+
+**Spotify Web Playback SDK:**
+
+- Direct playback control of the Web Player device
+- Real-time state updates via event listeners
+- Current track information and playback position
+
+**Spotify Web API (via backend):**
+
+- Search functionality (tracks, albums, artists)
+- Album data and track metadata
+- Device management (list devices, transfer playback)
+- Cross-device control (control phone, desktop app, etc.)
+
+**Why Both Are Needed:**
+The SDK is **limited to controlling only the Web Player device**. For all other functionality (search, device management, cross-device control), the app must use the Web API through the backend proxy.
+
+#### Frontend API Utilities
+
+The frontend provides utility functions that call backend endpoints:
+
+```typescript
+// frontend/src/utils/spotify.ts
+
+// Search functionality
+export async function searchTracks(query: string, limit = 20) {
+  const params = new URLSearchParams({
+    q: query,
+    type: 'track',
+    limit: limit.toString(),
+  });
+  const response = await fetch(`${API_BASE_URL}/spotify/search?${params.toString()}`, {
+    credentials: 'include', // Sends session cookie
+  });
+  return response.json();
+}
+
+export async function searchAlbums(query: string, limit = 20) {
+  // Similar to searchTracks with type: 'album'
+}
+
+// Album data
+export async function getFullAlbum(albumId: string) {
+  const response = await fetch(`${API_BASE_URL}/spotify/albums/${albumId}`, {
+    credentials: 'include',
+  });
+  return response.json();
+}
+
+// Device management
+export async function getDevices() {
+  const response = await fetch(`${API_BASE_URL}/spotify/devices`, {
+    credentials: 'include',
+  });
+  return response.json();
+}
+
+export async function transferPlayback(deviceId: string, play = true) {
+  const response = await fetch(`${API_BASE_URL}/spotify/transfer-playback`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ deviceId, play }),
+  });
+  return response.json();
+}
+
+// Token for SDK
+export async function getSpotifyToken(): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/spotify/token`, {
+    credentials: 'include',
+  });
+  return response.text(); // Returns plain text token
+}
+
+// Playback control (Web API - for cross-device)
+export async function pausePlayback() {
+  const res = await fetch(`${API_BASE_URL}/spotify/pause`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) throw new Error('Pause failed');
+}
+
+export async function resumePlayback(deviceId?: string) {
+  const res = await fetch(`${API_BASE_URL}/spotify/play`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(deviceId ? { deviceId } : {}),
+  });
+  if (!res.ok) throw new Error('Play failed');
+}
+
+export async function nextTrack() {
+  const res = await fetch(`${API_BASE_URL}/spotify/next`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Next failed');
+}
+
+export async function previousTrack() {
+  const res = await fetch(`${API_BASE_URL}/spotify/previous`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Previous failed');
+}
+
+export async function setVolumePercent(volume0to1: number) {
+  const res = await fetch(`${API_BASE_URL}/spotify/volume`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ volume: Math.round(volume0to1 * 100) }),
+  });
+  if (!res.ok) throw new Error('Volume failed');
+}
+
+export async function startPlayback(deviceId?: string, uris?: string[]) {
+  const res = await fetch(`${API_BASE_URL}/spotify/play`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId, uris }),
+  });
+  if (!res.ok) throw new Error('Start playback failed');
+}
+```
+
+**Key Points:**
+
+- All requests use `credentials: 'include'` to send session cookies
+- Backend handles authentication and token refresh automatically
+- Errors are thrown for failed requests (handled by components)
+- API base URL is configurable via `VITE_API_BASE_URL` environment variable
+
+#### When to Use SDK vs Web API
+
+**Use Spotify Web Playback SDK when:**
+
+- ✅ Controlling the **Web Player device** directly (the only device it can control)
+- ✅ Needing real-time state updates via event listeners
+- ✅ Playing music in the browser through the Web Player
+- ✅ Requiring immediate playback feedback for the Web Player
+
+**Use Web API (via backend) when:**
+
+- ✅ **Searching** for tracks/albums/artists (SDK cannot do this)
+- ✅ **Fetching album data** or track metadata (SDK cannot do this)
+- ✅ **Listing devices** or managing Spotify Connect devices (SDK cannot do this)
+- ✅ **Transferring playback** to other devices (SDK cannot do this)
+- ✅ **Controlling other devices** (phone, desktop app, speakers) - SDK only controls Web Player
+- ✅ Starting playback with specific URIs or positions on any device
+
+**Important Distinction:**
+
+- **SDK**: Only controls the **Web Player device** (the browser-based player)
+- **Web API**: Required for **everything else** - search, data fetching, device management, cross-device control
+
+**Hybrid Approach:**
+The app uses both simultaneously because they serve different purposes:
+
+- **SDK**: Web Player control and real-time state (limited to one device)
+- **Web API**: All other functionality (search, data, device management, cross-device control)
+- Backend ensures tokens are valid for both SDK and API calls
+
+See Backend documentation for detailed Web API endpoint documentation.
+
 ## Custom Hooks
 
 ### useSpotifyPlayer Hook
@@ -421,11 +895,20 @@ interface UseSpotifyPlayerReturn {
   setVolume: (volume: number) => Promise<void>;
 }
 
-const useSpotifyPlayer = (accessToken: string): UseSpotifyPlayerReturn => {
+const useSpotifyPlayer = (sdkReady?: boolean): UseSpotifyPlayerReturn => {
   // Implementation handles Spotify Web SDK integration
   // State synchronization with Zustand stores
   // Error handling and reconnection logic
+  // Device management and state polling
 };
+```
+
+**Usage:**
+
+```typescript
+// In App.tsx
+const [sdkReady, setSdkReady] = useState(false);
+useSpotifyPlayer(sdkReady); // Hook manages SDK initialization
 ```
 
 ### useDebounce Hook

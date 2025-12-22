@@ -43,9 +43,23 @@ export interface SpotifyTrack {
   duration_ms: number;
 }
 
+export interface SpotifyAlbum {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  images: { url: string; width: number; height: number }[];
+  uri: string;
+  release_date?: string;
+  total_tracks?: number;
+}
+
 export interface SpotifySearchResult {
-  tracks: {
+  tracks?: {
     items: SpotifyTrack[];
+    total: number;
+  };
+  albums?: {
+    items: SpotifyAlbum[];
     total: number;
   };
 }

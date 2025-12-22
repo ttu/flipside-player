@@ -37,11 +37,22 @@ const volumeSchema = z.object({
 });
 
 export async function spotifyRoutes(fastify: FastifyInstance) {
-  const spotify = new SpotifyAPI(
-    process.env.SPOTIFY_CLIENT_ID!,
-    process.env.SPOTIFY_CLIENT_SECRET!,
-    process.env.SPOTIFY_REDIRECT_URI!
-  );
+  // Use mock API if enabled
+  const useMock = process.env.USE_MOCK_SPOTIFY === 'true';
+
+  let spotify: SpotifyAPI | any;
+
+  if (useMock) {
+    const { MockSpotifyAPI } = await import('../mocks/spotifyAPI');
+    spotify = new MockSpotifyAPI();
+    fastify.log.info('🎭 Using Mock Spotify API');
+  } else {
+    spotify = new SpotifyAPI(
+      process.env.SPOTIFY_CLIENT_ID!,
+      process.env.SPOTIFY_CLIENT_SECRET!,
+      process.env.SPOTIFY_REDIRECT_URI!
+    );
+  }
 
   async function getValidAccessToken(request: any): Promise<string> {
     const sessionData = (request.session as any).get('user') as SessionData;

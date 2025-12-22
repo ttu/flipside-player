@@ -127,20 +127,35 @@ brew services start redis  # macOS with Homebrew
 
 ### 5. Run the Application
 
-**Development:**
+**Development (with real Spotify):**
 
 ```bash
 npm run dev          # Start both backend and frontend
 ```
 
+**Development (with mocks - no Spotify account needed):**
+
+```bash
+npm run dev:mock     # Start with mock Spotify SDK and API
+```
+
 **Docker:**
 
 ```bash
-npm run docker:dev   # Development with hot reloading
+npm run docker:dev   # Development with hot reloading (real Spotify)
+npm run docker:mock  # Development with mocks (no Spotify account needed)
 npm run docker:prod  # Production deployment
 ```
 
 Access the app at `http://localhost:5173` (dev) or `http://localhost:3001` (production).
+
+**Mock Mode Benefits:**
+
+- ✅ No Spotify Premium account required
+- ✅ No API credentials needed
+- ✅ No network connection to Spotify
+- ✅ Faster development iteration
+- ✅ Consistent test data
 
 For production environment configuration, see the [Deployment](#deployment) section below.
 
