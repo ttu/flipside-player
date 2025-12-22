@@ -223,14 +223,31 @@ body {
   gap: 2.5rem;
 }
 
-.app-title {
-  font-size: var(--font-size-2xl);
+/* Shared Header Styles */
+.section-header,
+.section-header h2,
+.section-header h3 {
   font-weight: 700;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.025em;
+}
+
+.app-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.025em;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.app-title:hover {
+  color: var(--color-primary);
+  transform: scale(1.05);
 }
 
 .header-search {
@@ -269,26 +286,29 @@ body {
 }
 
 .logout-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ccc;
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   font-size: 1rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
 }
 
 .logout-button:hover {
-  background: rgba(99, 102, 241, 0.15);
+  background: var(--color-primary-light);
   border-color: var(--color-primary);
   color: var(--color-primary);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 /* User Dropdown Menu */
@@ -304,15 +324,15 @@ body {
   gap: 0.5rem;
   padding: 0.5rem;
   cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
   border: 1px solid transparent;
 }
 
 .user-trigger:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-glass);
+  border-color: var(--color-border);
 }
 
 .user-trigger .user-avatar {
@@ -324,13 +344,14 @@ body {
 
 .user-trigger .user-name {
   font-size: 0.9rem;
-  color: #ccc;
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 
 .dropdown-arrow {
   font-size: 0.8rem;
-  color: #666;
-  transition: transform 0.2s ease;
+  color: var(--color-text-muted);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dropdown-arrow.open {
@@ -342,11 +363,11 @@ body {
   top: 100%;
   right: 0;
   margin-top: 0.5rem;
-  background: #1a1a1a;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: var(--color-bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   min-width: 220px;
   z-index: var(--z-user-dropdown);
   overflow: hidden;
@@ -369,7 +390,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .dropdown-avatar {
@@ -386,7 +407,7 @@ body {
 
 .dropdown-user-name {
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
@@ -395,7 +416,7 @@ body {
 
 .dropdown-user-id {
   font-size: 0.75rem;
-  color: #999;
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -403,7 +424,7 @@ body {
 
 .dropdown-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-border);
   margin: 0.5rem 0;
 }
 
@@ -415,31 +436,48 @@ body {
   padding: 0.75rem 1rem;
   background: transparent;
   border: none;
-  color: #ccc;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: var(--color-bg-glass);
+  color: var(--color-text-primary);
 }
 
 .dropdown-item.logout-item {
   color: var(--color-danger);
+  font-weight: 600;
 }
 
 .dropdown-item.logout-item:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--color-danger);
+  background: var(--color-danger);
+  color: white;
+  transform: translateX(4px);
+}
+
+.dropdown-item.logout-item .dropdown-icon {
+  color: inherit;
+  font-weight: 300;
+  font-size: 1.125rem;
 }
 
 .dropdown-icon {
   font-size: 1rem;
   width: 18px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-item.logout-item:hover .dropdown-icon {
+  transform: translate(2px, -2px);
 }
 
 .dropdown-toggle {
@@ -456,7 +494,7 @@ body {
   margin-left: auto;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #999;
+  color: var(--color-text-muted);
   padding: 0.25rem 0.5rem;
 }
 
@@ -1220,10 +1258,6 @@ body {
 .side-title {
   font-size: var(--font-size-lg);
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--color-primary-light);
@@ -1232,6 +1266,14 @@ body {
   align-items: center;
   justify-content: space-between;
   letter-spacing: -0.01em;
+}
+
+.side-title,
+.side-title h3 {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .side-duration {
@@ -1829,36 +1871,17 @@ body {
 .progress-section {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex: 1;
-  gap: 1rem;
   min-width: 0;
 }
 
 .time-display {
-  font-size: 0.85rem;
-  color: #ccc;
-  min-width: 40px;
-}
-
-.progress-bar-container {
-  flex: 1;
-  height: 4px;
-  position: relative;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 2px;
-  transition: width 0.1s linear;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
 }
 
 .volume-section {
@@ -2311,14 +2334,13 @@ body {
 
 .favorites-header h2 {
   font-size: var(--font-size-4xl);
-  font-weight: 700;
   margin-bottom: 0.5rem;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.025em;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .favorites-count {
@@ -2616,18 +2638,19 @@ body {
 
 .expanded-header h2 {
   font-size: var(--font-size-4xl);
-  font-weight: 700;
   margin-bottom: 0.5rem;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.025em;
+  font-weight: 700;
 }
 
 .expanded-header p {
-  font-size: 1.2rem;
-  color: #ccc;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 
 .expanded-content {
@@ -2675,13 +2698,13 @@ body {
 
 .side-header h3 {
   font-size: var(--font-size-2xl);
-  font-weight: 700;
+  margin: 0;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0;
   letter-spacing: -0.025em;
+  font-weight: 700;
 }
 
 .side-header .side-title {

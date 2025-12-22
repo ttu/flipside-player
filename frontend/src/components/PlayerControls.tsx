@@ -70,8 +70,6 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const progressPercentage = durationMs > 0 ? (positionMs / durationMs) * 100 : 0;
-
   return (
     <div className={`player-controls ${className}`}>
       <div className="transport-controls">
@@ -97,15 +95,9 @@ export function PlayerControls({ className = '' }: PlayerControlsProps) {
       </div>
 
       <div className="progress-section">
-        <span className="time-display current-time">{formatTime(positionMs)}</span>
-
-        <div className="progress-bar-container">
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progressPercentage}%` }} />
-          </div>
-        </div>
-
-        <span className="time-display total-time">{formatTime(durationMs)}</span>
+        <span className="time-display">
+          {formatTime(positionMs)} / {formatTime(durationMs)}
+        </span>
       </div>
 
       <div className="volume-section">

@@ -60,7 +60,7 @@ export function UserMenu({ className = '' }: UserMenuProps) {
           <div className="dropdown-divider"></div>
 
           <button className="dropdown-item logout-item" onClick={handleLogout}>
-            <span className="dropdown-icon">↗️</span>
+            <span className="dropdown-icon">↗</span>
             <span>Logout</span>
           </button>
         </div>

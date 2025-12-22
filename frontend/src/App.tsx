@@ -25,7 +25,7 @@ declare global {
 
 function App() {
   const { isAuthenticated, loading, checkAuth } = useAuthStore();
-  const { view, loadLastPlayedAlbum } = useUIStore();
+  const { view, loadLastPlayedAlbum, setViewMode } = useUIStore();
   const [authError, setAuthError] = useState<string | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
 
@@ -97,7 +97,13 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1 className="app-title">FlipSide Player</h1>
+          <h1
+            className="app-title"
+            onClick={() => setViewMode('vinyl')}
+            title="Switch to Vinyl view"
+          >
+            FlipSide Player
+          </h1>
           <SearchBar className="header-search" />
         </div>
 

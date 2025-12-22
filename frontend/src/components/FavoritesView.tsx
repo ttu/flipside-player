@@ -27,6 +27,7 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
     storageType,
     setStorageType,
     setActiveSide,
+    setViewMode,
   } = useUIStore();
   const {
     deviceId,
@@ -69,6 +70,9 @@ export function FavoritesView({ className = '' }: FavoritesViewProps) {
       setAlbumLoading(true);
 
       const tracks = side === 'A' ? expandedAlbum.sideA : expandedAlbum.sideB;
+
+      // Switch to vinyl view to see the deck
+      setViewMode('vinyl');
 
       // Update stores
       setCurrentAlbum(expandedAlbum.album);
