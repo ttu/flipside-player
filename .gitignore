@@ -52,3 +52,8 @@ coverage/
 
 # Redis dump
 dump.rdb
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

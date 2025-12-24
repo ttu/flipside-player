@@ -200,6 +200,23 @@ npm run format       # Format code with Prettier
 npm run lint         # Lint all code
 ```
 
+**Testing:**
+
+```bash
+# Install Playwright browsers (first time only)
+npm run test:e2e:install
+
+# Automated test run (recommended - handles everything)
+npm run test:e2e:full
+
+# Or run manually:
+npm run dev:mock     # Start mock environment in another terminal
+npm run test:e2e      # Run Playwright tests
+npm run test:e2e:ui  # Run tests in interactive UI mode
+```
+
+See [e2e/README.md](./e2e/README.md) for detailed testing instructions.
+
 For detailed architecture, components, and API documentation, see:
 
 - [Architecture Documentation](docs/architecture.md)

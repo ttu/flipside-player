@@ -8,17 +8,18 @@ This documentation is organized into focused files to help you understand, devel
 
 ### 📁 Documentation Structure
 
-| File                                       | Purpose                                                                         | Audience                   |
-| ------------------------------------------ | ------------------------------------------------------------------------------- | -------------------------- |
-| **[description.md](./description.md)**     | App description, use cases, target users, and core purpose                      | All stakeholders           |
-| **[architecture.md](./architecture.md)**   | Complete application architecture, tech stack, data models, and design patterns | Developers, Architects     |
-| **[application.md](./application.md)**     | Views/screens, UI/UX patterns, navigation flow, and styling guidelines          | Developers, Designers      |
-| **[datamodel.md](./datamodel.md)**         | Entities, attributes, relationships, and data storage architecture              | Developers, Data Engineers |
-| **[changelog.md](./changelog.md)**         | Detailed history of changes, fixes, and improvements                            | All team members           |
-| **[project-notes.md](./project-notes.md)** | Project discussions, requirements, and key decisions                            | Product Owners, Developers |
-| **[debugging.md](./debugging.md)**         | Troubleshooting guide, common issues, and debugging notes                       | Developers, Support        |
-| **[learnings.md](./learnings.md)**         | Technical insights, best practices, and solutions discovered                    | Developers                 |
-| **[todo.md](./todo.md)**                   | Current tasks and planned improvements                                          | All team members           |
+| File                                             | Purpose                                                                         | Audience                   |
+| ------------------------------------------------ | ------------------------------------------------------------------------------- | -------------------------- |
+| **[description.md](./description.md)**           | App description, use cases, target users, and core purpose                      | All stakeholders           |
+| **[architecture.md](./architecture.md)**         | Complete application architecture, tech stack, data models, and design patterns | Developers, Architects     |
+| **[application.md](./application.md)**           | Views/screens, UI/UX patterns, navigation flow, and styling guidelines          | Developers, Designers      |
+| **[datamodel.md](./datamodel.md)**               | Entities, attributes, relationships, and data storage architecture              | Developers, Data Engineers |
+| **[changelog.md](./changelog.md)**               | Detailed history of changes, fixes, and improvements                            | All team members           |
+| **[project-notes.md](./project-notes.md)**       | Project discussions, requirements, and key decisions                            | Product Owners, Developers |
+| **[debugging.md](./debugging.md)**               | Troubleshooting guide, common issues, and debugging notes                       | Developers, Support        |
+| **[learnings.md](./learnings.md)**               | Technical insights, best practices, and solutions discovered                    | Developers                 |
+| **[todo.md](./todo.md)**                         | Current tasks and planned improvements                                          | All team members           |
+| **[mock-development.md](./mock-development.md)** | Guide for using mock environment for development and testing                    | Developers                 |
 
 ### 🏠 Root Documentation
 
@@ -31,7 +32,9 @@ This documentation is organized into focused files to help you understand, devel
 1. Start with **[description.md](./description.md)** to understand what FlipSide Player is
 2. Review **[architecture.md](./architecture.md)** to understand the technical foundation
 3. Check **[../README.md](../README.md)** for setup instructions
-4. Refer to **[debugging.md](./debugging.md)** when you encounter issues
+4. Review **[mock-development.md](./mock-development.md)** for development without Spotify credentials
+5. See **[../e2e/README.md](../e2e/README.md)** for E2E testing with Playwright
+6. Refer to **[debugging.md](./debugging.md)** when you encounter issues
 
 ### For Product/Design
 
